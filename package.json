@@ -1,0 +1,51 @@
+{
+  "name": "@coinspace/cs-solana-wallet",
+  "version": "1.0.1",
+  "description": "Solana Wallet for Coin app",
+  "author": "Coin Crypto Wallet <support@coin.space> (https://coin.space/)",
+  "license": "MIT",
+  "main": "./index.js",
+  "type": "module",
+  "scripts": {
+    "test": "mocha",
+    "lint": "eslint index.js lib/*.js test/*.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CoinSpace/cs-solana-wallet.git"
+  },
+  "dependencies": {
+    "@solana/web3.js": "^1.37.2",
+    "bignumber.js": "^9.0.2",
+    "ed25519-hd-key": "^1.2.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.10.0",
+    "eslint-config-coinspace": "^1.2.1",
+    "mocha": "^9.2.2"
+  },
+  "eslintConfig": {
+    "extends": [
+      "coinspace"
+    ],
+    "env": {
+      "node": true
+    },
+    "parserOptions": {
+      "ecmaVersion": 2022,
+      "requireConfigFile": false,
+      "sourceType": "module"
+    },
+    "overrides": [
+      {
+        "files": [
+          "*.test.js",
+          "test/*"
+        ],
+        "env": {
+          "mocha": true
+        }
+      }
+    ]
+  }
+}
