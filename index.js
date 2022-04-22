@@ -286,6 +286,7 @@ export default class SolanaWallet {
     const csFeeAddresses = this.#csFeeAddresses;
     let amount = new BigNumber(0);
     let csFee = new BigNumber(0);
+    const instructions = [];
     for (const instruction of tx.transaction.message.instructions) {
       if (instruction.parsed.type === 'transfer') {
         if (instruction.parsed.info.destination === address) {
@@ -294,9 +295,14 @@ export default class SolanaWallet {
         if (instruction.parsed.info.source === address) {
           amount = amount.minus(instruction.parsed.info.lamports);
         }
-        if (csFeeAddresses.includes(instruction.parsed.destination)) {
+        if (csFeeAddresses.includes(instruction.parsed.info.destination)) {
           csFee = csFee.plus(instruction.parsed.info.lamports);
         }
+        instructions.push({
+          source: instruction.parsed.info.source,
+          destination: instruction.parsed.info.destination,
+          amount: instruction.parsed.info.lamports,
+        });
       }
     }
     return {
@@ -310,6 +316,7 @@ export default class SolanaWallet {
       confirmations: 1,
       fee: csFee.plus(tx.meta.fee),
       isIncoming: amount.isGreaterThanOrEqualTo(0),
+      instructions,
     };
   }
 
