@@ -128,9 +128,7 @@ export default class SolanaWallet {
     this.#cache.set('balance', this.#balance);
     this.#txsCursor = undefined;
     this.#hasMoreTxs = true;
-    for (const feeRate of this.#feeRates) {
-      feeRate.maxAmount = this.#calculateMaxAmount(feeRate);
-    }
+    this.#calculateMaxAmounts();
   }
 
   #requestWeb(config) {
@@ -240,6 +238,12 @@ export default class SolanaWallet {
     return maxAmount;
   }
 
+  #calculateMaxAmounts() {
+    for (const feeRate of this.#feeRates) {
+      feeRate.maxAmount = this.#calculateMaxAmount(feeRate);
+    }
+  }
+
   estimateFees(value = 0) {
     const amount = new BigNumber(value, 10);
     return this.#feeRates.map((feeRate) => {
@@ -289,14 +293,15 @@ export default class SolanaWallet {
     const instructions = [];
     for (const instruction of tx.transaction.message.instructions) {
       if (instruction.parsed.type === 'transfer') {
-        if (instruction.parsed.info.destination === address) {
-          amount = amount.plus(instruction.parsed.info.lamports);
-        }
-        if (instruction.parsed.info.source === address) {
-          amount = amount.minus(instruction.parsed.info.lamports);
-        }
         if (csFeeAddresses.includes(instruction.parsed.info.destination)) {
           csFee = csFee.plus(instruction.parsed.info.lamports);
+        } else {
+          if (instruction.parsed.info.destination === address) {
+            amount = amount.plus(instruction.parsed.info.lamports);
+          }
+          if (instruction.parsed.info.source === address) {
+            amount = amount.minus(instruction.parsed.info.lamports);
+          }
         }
         instructions.push({
           source: instruction.parsed.info.source,
@@ -313,6 +318,7 @@ export default class SolanaWallet {
       fee: csFee.plus(tx.meta.fee),
       isIncoming: amount.isGreaterThanOrEqualTo(0),
       instructions,
+      confirmed: true,
     };
   }
 
@@ -348,46 +354,72 @@ export default class SolanaWallet {
       throw new Error('Insufficient funds');
     }
 
+    const fromPubkey = new web3.PublicKey(this.#publicKey);
     const latestBlockhash = await this.#getLatestBlockHash();
     const tx = new web3.Transaction({
       recentBlockhash: latestBlockhash.blockhash,
     });
+    const instructions = [];
     tx.add(web3.SystemProgram.transfer({
-      fromPubkey: new web3.PublicKey(this.#publicKey),
+      fromPubkey,
       toPubkey: toPublicKey,
       lamports: amount.toString(10),
     }));
+    instructions.push({
+      source: fromPubkey.toBase58(),
+      destination: to,
+      amount: amount.toString(10),
+    });
 
     if (csFee.isGreaterThan(0)) {
       tx.add(web3.SystemProgram.transfer({
-        fromPubkey: new web3.PublicKey(this.#publicKey),
+        fromPubkey,
         toPubkey: new web3.PublicKey(this.#csFeeAddresses[0]),
         lamports: csFee.toString(10),
       }));
+      instructions.push({
+        source: fromPubkey.toBase58(),
+        destination: this.#csFeeAddresses[0],
+        amount: csFee.toString(10),
+      });
     }
 
     return {
+      wallet: this,
       tx,
-      sign: () => {
-        return this.signTx(tx);
+      to,
+      amount: amount.negated().toString(10),
+      total: amount.plus(totalFee),
+      timestamp: new Date(),
+      fee: totalFee.toString(10),
+      isIncoming: false,
+      instructions,
+      confirmed: true,
+      sign() {
+        this.wallet.signTx(tx);
+        return this;
       },
     };
   }
 
   signTx(tx) {
     tx.sign(web3.Keypair.fromSeed(Buffer.from(this.#secretKey)));
-    return tx.serialize();
   }
 
-  async sendTx(tx) {
-    const res = await this.#requestNode({
+  async sendTx(transaction) {
+    const id = await this.#requestNode({
       url: 'api/v1/tx/submit',
       method: 'post',
       data: {
-        transaction: tx.toString('base64'),
+        transaction: transaction.tx.serialize().toString('base64'),
       },
     });
-    return res;
+    this.#balance = this.#balance.minus(transaction.total);
+    this.#calculateMaxAmounts();
+    return {
+      id,
+      ...transaction,
+    };
   }
 
   txUrl(txId) {
