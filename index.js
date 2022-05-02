@@ -310,10 +310,6 @@ export default class SolanaWallet {
       to: tx.transaction.message.instructions.find((item) => item.parsed.type === 'transfer').parsed.info.destination,
       amount: amount.toString(10),
       timestamp: new Date(tx.blockTime * 1000).getTime(),
-      // TODO Confirmations
-      confirmed: true,
-      minConf: 0,
-      confirmations: 1,
       fee: csFee.plus(tx.meta.fee),
       isIncoming: amount.isGreaterThanOrEqualTo(0),
       instructions,
