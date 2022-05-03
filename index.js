@@ -160,13 +160,15 @@ export default class SolanaWallet {
           crypto: this.#crypto._id,
         },
       });
-      this.#csFee = result.fee;
-      this.#csMinFee = new BigNumber(result.minFee, 10);
-      this.#csMaxFee = new BigNumber(result.maxFee, 10);
-      this.#csSkipMinFee = result.skipMinFee || false;
-      this.#csFeeAddresses = result.addresses;
-      this.#csFeeOff = result.addresses.length === 0
-        || result.whitelist.includes(this.#getAddress());
+      if (result) {
+        this.#csFee = result.fee;
+        this.#csMinFee = new BigNumber(result.minFee, 10);
+        this.#csMaxFee = new BigNumber(result.maxFee, 10);
+        this.#csSkipMinFee = result.skipMinFee || false;
+        this.#csFeeAddresses = result.addresses;
+        this.#csFeeOff = result.addresses.length === 0
+          || result.whitelist.includes(this.#getAddress());
+      }
     } catch (err) {
       console.error(err);
     }
