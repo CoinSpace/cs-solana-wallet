@@ -147,6 +147,10 @@ export default class SolanaWallet {
       baseURL: this.#apiNode,
       disableDefaultCatch: true,
     }).catch((err) => {
+      if (err.response &&
+          err.response.data === 'Transaction leaves an account with a lower balance than rent-exempt minimum') {
+        throw new Error(err.response.data);
+      }
       console.error(err);
       throw new Error('cs-node-error');
     });
