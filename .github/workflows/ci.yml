@@ -31,10 +31,6 @@ jobs:
         with:
           node-version: 14
           registry-url: https://npm.pkg.github.com/
-      - name: Download cardano.asm.js
-        uses: actions/download-artifact@v3
-        with:
-          name: asm
       - run: npm ci
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_READ_TOKEN}}
