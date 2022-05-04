@@ -434,6 +434,6 @@ export default class SolanaWallet {
 
   exportPrivateKeys() {
     const keypair = web3.Keypair.fromSeed(Buffer.from(this.#secretKey));
-    return `[${keypair.secretKey.toString()}]`;
+    return `address,privatekey\n${this.#getAddress()},[${keypair.secretKey.toString()}]`;
   }
 }
