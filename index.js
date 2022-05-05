@@ -3,7 +3,8 @@ import * as web3 from '@solana/web3.js';
 import * as HDKey from 'ed25519-hd-key';
 import { calculateCsFee, reverseCsFee } from './lib/fee.js';
 
-const BIP44_PATH = "m/44'/501'/0'/1'";
+// https://docs.solana.com/wallet-guide/paper-wallet#hierarchical-derivation
+const BIP44_PATH = "m/44'/501'/0'/0'";
 
 export default class SolanaWallet {
   #crypto;
@@ -85,7 +86,6 @@ export default class SolanaWallet {
     this.#apiWeb = options.apiWeb;
 
     if (options.seed) {
-      // https://docs.solana.com/wallet-guide/paper-wallet#hierarchical-derivation
       this.#secretKey = HDKey.derivePath(BIP44_PATH, options.seed).key;
       this.#publicKey = web3.Keypair.fromSeed(this.#secretKey).publicKey.toBuffer();
     } else if (options.publicKey) {

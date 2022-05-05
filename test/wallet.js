@@ -7,11 +7,11 @@ import SolanaWallet from '../index.js';
 // eslint-disable-next-line max-len
 const RANDOM_SEED = '3e818cec5efc7505369fae3f162af61130b673fa9b40e5955d5cde22a85afa03748d074356a281a5fc1dbd0b721357c56095a54de8d4bc6ecaa288f300776ae4';
 // eslint-disable-next-line max-len
-const RANDOM_PUBLIC_KEY = '"4040d4fa236cd10ada012e54e0f006d522733bef724256efc60b3b88db5b2fe9"';
+const RANDOM_PUBLIC_KEY = '"b15ad93bfe17665bc6e251526f81ab42c5cfae28365f39150298f2b91dc9f0ab"';
 
 const TRANSACTIONS = JSON.parse(await fs.readFile('./test/fixtures/transactions.json'));
 
-const WALLET_ADDRESS = '5KpRxiNPiSWtAemjtKWaBfbxvXk7mN2z6UFEiSu3JyzQ';
+const WALLET_ADDRESS = 'CwKWYm4nepcBV7T3dYMfP5sTu6iVVZTsAF6RxmJn1Wjc';
 const DESTIONATION_ADDRESS = '99znZjNvScoKn8WB3eQ96b2xq6umdnECWAZDzzyHDWHx';
 const CS_FEE_ADDRESS = '99znZjNvScoKn8WB3eQ96b2xq6umdnECWAZDzzyHDWHx';
 const CS_FEE = {
@@ -542,7 +542,7 @@ describe('Wallet', () => {
       });
       await wallet.load();
       // eslint-disable-next-line max-len
-      const expected = `address,privatekey\n${WALLET_ADDRESS},[110,98,64,238,24,71,230,185,181,63,168,98,46,14,127,90,156,52,127,24,25,203,192,134,5,221,222,80,31,9,220,36,64,64,212,250,35,108,209,10,218,1,46,84,224,240,6,213,34,115,59,239,114,66,86,239,198,11,59,136,219,91,47,233]`;
+      const expected = `address,privatekey\n${WALLET_ADDRESS},[120,161,47,54,145,8,9,67,127,33,126,45,190,150,4,182,65,48,133,71,212,91,154,63,121,60,14,47,191,70,209,19,177,90,217,59,254,23,102,91,198,226,81,82,111,129,171,66,197,207,174,40,54,95,57,21,2,152,242,185,29,201,240,171]`;
       assert.strictEqual(wallet.exportPrivateKeys(), expected);
     });
   });
