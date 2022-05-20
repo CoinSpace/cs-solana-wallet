@@ -277,7 +277,7 @@ export default class SolanaWallet {
     });
     this.#hasMoreTxs = transactions.length === this.#txsPerPage;
     if (transactions.length) {
-      this.#txsCursor = transactions[0].transaction.signatures[0];
+      this.#txsCursor = transactions[transactions.length - 1].transaction.signatures[0];
     }
     return {
       txs: this.#transformTxs(transactions),
