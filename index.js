@@ -296,6 +296,7 @@ export default class SolanaWallet {
     const csFeeAddresses = this.#csFeeAddresses;
     let amount = new BigNumber(0);
     let csFee = new BigNumber(0);
+    let to;
     const instructions = [];
     for (const instruction of tx.transaction.message.instructions) {
       if (instruction.parsed.type === 'transfer') {
@@ -307,6 +308,7 @@ export default class SolanaWallet {
           }
           if (instruction.parsed.info.source === address) {
             amount = amount.minus(instruction.parsed.info.lamports);
+            to = instruction.parsed.info.destination;
           }
         }
         instructions.push({
@@ -318,7 +320,7 @@ export default class SolanaWallet {
     }
     return {
       id: tx.transaction.signatures[0],
-      to: tx.transaction.message.instructions.find((item) => item.parsed.type === 'transfer').parsed.info.destination,
+      to,
       amount: amount.toString(10),
       timestamp: new Date(tx.blockTime * 1000).getTime(),
       fee: csFee.plus(tx.meta.fee),
