@@ -420,10 +420,10 @@ describe('Wallet', () => {
       );
       assert.strictEqual(transaction.tx.instructions.length, 2);
       const instructionTransfer = web3.SystemInstruction.decodeTransfer(transaction.tx.instructions[0]);
-      assert.strictEqual(instructionTransfer.lamports, 15000000000);
+      assert.strictEqual(instructionTransfer.lamports, 15000000000n);
       assert.strictEqual(instructionTransfer.toPubkey.toBase58(), DESTIONATION_ADDRESS);
       const instructionCsFee = web3.SystemInstruction.decodeTransfer(transaction.tx.instructions[1]);
-      assert.strictEqual(instructionCsFee.lamports, 7500000);
+      assert.strictEqual(instructionCsFee.lamports, 7500000n);
       assert.strictEqual(instructionCsFee.toPubkey.toBase58(), CS_FEE_ADDRESS);
     });
 
@@ -435,10 +435,10 @@ describe('Wallet', () => {
       );
       assert.strictEqual(transaction.tx.instructions.length, 2);
       const instructionTransfer = web3.SystemInstruction.decodeTransfer(transaction.tx.instructions[0]);
-      assert.strictEqual(instructionTransfer.lamports, 59970009996);
+      assert.strictEqual(instructionTransfer.lamports, 59970009996n);
       assert.strictEqual(instructionTransfer.toPubkey.toBase58(), DESTIONATION_ADDRESS);
       const instructionCsFee = web3.SystemInstruction.decodeTransfer(transaction.tx.instructions[1]);
-      assert.strictEqual(instructionCsFee.lamports, 29985004);
+      assert.strictEqual(instructionCsFee.lamports, 29985004n);
       assert.strictEqual(instructionCsFee.toPubkey.toBase58(), CS_FEE_ADDRESS);
     });
 
@@ -465,7 +465,7 @@ describe('Wallet', () => {
       );
       assert.strictEqual(transaction.tx.instructions.length, 1);
       const instructionTransfer = web3.SystemInstruction.decodeTransfer(transaction.tx.instructions[0]);
-      assert.strictEqual(instructionTransfer.lamports, 2000000);
+      assert.strictEqual(instructionTransfer.lamports, 2000000n);
       assert.strictEqual(instructionTransfer.toPubkey.toBase58(), DESTIONATION_ADDRESS);
     });
   });
