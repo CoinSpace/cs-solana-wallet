@@ -1,5 +1,6 @@
 import BigNumber from 'bignumber.js';
 import * as web3 from '@solana/web3.js';
+import * as spl from '@solana/spl-token';
 import * as HDKey from 'ed25519-hd-key';
 import { calculateCsFee, reverseCsFee } from './lib/fee.js';
 
@@ -8,6 +9,7 @@ const BIP44_PATH = "m/44'/501'/0'/0'";
 
 export default class SolanaWallet {
   #crypto;
+  #platformCrypto;
   #cache;
   #balance;
   #request;
@@ -24,6 +26,8 @@ export default class SolanaWallet {
     name: 'default',
     default: true,
   }];
+  #rent;
+  #tokenAccount;
   #minerFee;
   #csFee;
   #csMinFee;
@@ -59,11 +63,20 @@ export default class SolanaWallet {
     return this.#crypto;
   }
 
+  get platformCrypto() {
+    return this.#platformCrypto;
+  }
+
   constructor(options = {}) {
     if (!options.crypto) {
       throw new TypeError('crypto should be passed');
     }
     this.#crypto = options.crypto;
+
+    if (!options.platformCrypto) {
+      throw new TypeError('platformCrypto should be passed');
+    }
+    this.#platformCrypto = options.platformCrypto;
 
     if (!options.cache) {
       throw new TypeError('cache should be passed');
@@ -123,6 +136,13 @@ export default class SolanaWallet {
 
   async load() {
     await this.#loadCsFee();
+    if (this.#crypto.type === 'token') {
+      this.#rent = await this.#calculateMinimumBalanceForRentExemption();
+      this.#tokenAccount = (await spl.getAssociatedTokenAddress(
+        new web3.PublicKey(this.#crypto.address),
+        new web3.PublicKey(this.#publicKey)
+      )).toBase58();
+    }
     this.#minerFee = await this.#calculateMinerFee();
     this.#balance = await this.#calculateBalance();
     this.#cache.set('balance', this.#balance);
@@ -157,6 +177,9 @@ export default class SolanaWallet {
   }
 
   async #loadCsFee() {
+    if (this.#crypto.type === 'token') {
+      return;
+    }
     try {
       const result = await this.#requestWeb({
         url: 'api/v3/csfee',
@@ -179,6 +202,13 @@ export default class SolanaWallet {
   }
 
   async #calculateBalance() {
+    if (this.#crypto.type === 'token') {
+      const { balance } = await this.#requestNode({
+        url: `api/v1/addresses/${this.#getAddress()}/token/${this.#crypto.address}/balance`,
+        method: 'get',
+      });
+      return new BigNumber(balance);
+    }
     const { balance } = await this.#requestNode({
       url: `api/v1/addresses/${this.#getAddress()}/balance`,
       method: 'get',
@@ -191,6 +221,24 @@ export default class SolanaWallet {
       url: 'api/v1/latestBlockhash',
       method: 'get',
     });
+  }
+
+  #getMinimumBalanceForRentExemption() {
+    return this.#requestNode({
+      url: 'api/v1/minimumBalanceForRentExemptAccount',
+      method: 'get',
+      params: {
+        size: spl.ACCOUNT_SIZE,
+      },
+    });
+  }
+
+  async #getAccountInfo(address) {
+    const info = await this.#requestNode({
+      url: `api/v1/addresses/${address}/info`,
+      method: 'get',
+    });
+    return info;
   }
 
   #calculateCsFee(value) {
@@ -206,11 +254,17 @@ export default class SolanaWallet {
     );
   }
 
+  async #calculateMinimumBalanceForRentExemption() {
+    const { rent } = await this.#getMinimumBalanceForRentExemption();
+    return new BigNumber(rent);
+  }
+
   async #calculateMinerFee() {
     const publicKey = new web3.PublicKey(this.#publicKey);
     const latestBlockhash = await this.#getLatestBlockHash();
     const tx = new web3.Transaction({
-      recentBlockhash: latestBlockhash.blockhash,
+      blockhash: latestBlockhash.blockhash,
+      lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
       feePayer: publicKey,
     });
     tx.add(web3.SystemProgram.transfer({
@@ -225,14 +279,20 @@ export default class SolanaWallet {
         message: tx.compileMessage().serialize().toString('base64'),
       },
     });
-    return new BigNumber(fee.value);
+    if (this.#crypto.type === 'coin') {
+      return new BigNumber(fee.value);
+    }
+    // token
+    return new BigNumber(fee.value).plus(this.#rent);
   }
 
   #calculateMaxAmount(feeRate) {
     if (feeRate.name !== 'default') {
       throw new Error('Unsupported fee rate');
     }
-
+    if (this.#crypto.type === 'token') {
+      return this.#balance;
+    }
     if (this.#balance.isLessThanOrEqualTo(this.#minerFee)) {
       return new BigNumber(0);
     }
@@ -267,8 +327,9 @@ export default class SolanaWallet {
     if (!this.#hasMoreTxs) {
       return [];
     }
+    const account = this.#crypto.type === 'coin' ? this.#getAddress() : this.#tokenAccount;
     const transactions = await this.#requestNode({
-      url: `api/v1/addresses/${this.#getAddress()}/transactions`,
+      url: `api/v1/addresses/${account}/transactions`,
       method: 'get',
       params: {
         limit: this.#txsPerPage,
@@ -280,31 +341,47 @@ export default class SolanaWallet {
       this.#txsCursor = transactions[transactions.length - 1].transaction.signatures[0];
     }
     return {
-      txs: this.#transformTxs(transactions),
+      txs: await this.#transformTxs(transactions),
       hasMoreTxs: this.#hasMoreTxs,
     };
   }
 
   #transformTxs(txs) {
-    return txs.map((tx) => {
+    return Promise.all(txs.map((tx) => {
       return this.#transformTx(tx);
-    });
+    }));
   }
 
-  #transformTx(tx) {
+  async #transformTx(tx) {
     const address = this.#getAddress();
+    const token = this.#crypto.type === 'token' ? this.#crypto.address : false;
     const csFeeAddresses = this.#csFeeAddresses;
     let amount = new BigNumber(0);
-    let csFee = new BigNumber(0);
+    let totalFee = new BigNumber(0);
     let to;
+    let isIncoming = false;
+    const postTokenBalances = [];
+    if (tx.meta.postTokenBalances) {
+      for (const postTokenBalance of tx.meta.postTokenBalances) {
+        postTokenBalances.push({
+          ...postTokenBalance,
+          account: (await spl.getAssociatedTokenAddress(
+            new web3.PublicKey(postTokenBalance.mint),
+            new web3.PublicKey(postTokenBalance.owner)
+          )).toBase58(),
+        });
+      }
+    }
     const instructions = [];
     for (const instruction of tx.transaction.message.instructions) {
-      if (instruction.parsed.type === 'transfer') {
+      if (!token && instruction.program === 'system' && instruction.parsed.type === 'transfer') {
+        // SOL coin
         if (csFeeAddresses.includes(instruction.parsed.info.destination)) {
-          csFee = csFee.plus(instruction.parsed.info.lamports);
+          totalFee = totalFee.plus(instruction.parsed.info.lamports);
         } else {
           if (instruction.parsed.info.destination === address) {
             amount = amount.plus(instruction.parsed.info.lamports);
+            isIncoming = true;
           }
           if (instruction.parsed.info.source === address) {
             amount = amount.minus(instruction.parsed.info.lamports);
@@ -317,14 +394,50 @@ export default class SolanaWallet {
           amount: instruction.parsed.info.lamports,
         });
       }
+      if (instruction.program === 'spl-token' && instruction.parsed.type === 'transfer') {
+        // Tokens
+        const destination = postTokenBalances.find((item) => item.account === instruction.parsed.info.destination);
+        if (destination && (!token || destination.mint === token)) {
+          if (destination.owner === address) {
+            if (token) {
+              amount = amount.plus(instruction.parsed.info.amount);
+            }
+            isIncoming = true;
+          }
+          if (instruction.parsed.info.authority === address) {
+            if (token) {
+              amount = amount.minus(instruction.parsed.info.amount);
+            }
+            to = destination.owner;
+          }
+          if (token) {
+            instructions.push({
+              source: instruction.parsed.info.authority,
+              destination: destination.owner,
+              amount: instruction.parsed.info.amount,
+            });
+          }
+        }
+      }
+    }
+    if (tx.meta.innerInstructions) {
+      for (const item of tx.meta.innerInstructions) {
+        for (const instruction of item.instructions) {
+          if (instruction.program === 'system' && instruction.parsed.type === 'createAccount') {
+            if (instruction.parsed.info.source === address) {
+              totalFee = totalFee.plus(instruction.parsed.info.lamports);
+            }
+          }
+        }
+      }
     }
     return {
       id: tx.transaction.signatures[0],
       to,
       amount: amount.toString(10),
       timestamp: new Date(tx.blockTime * 1000).getTime(),
-      fee: csFee.plus(tx.meta.fee),
-      isIncoming: amount.isGreaterThanOrEqualTo(0),
+      fee: totalFee.plus(tx.meta.fee),
+      isIncoming,
       instructions,
       confirmed: true,
     };
@@ -338,6 +451,7 @@ export default class SolanaWallet {
       throw new Error('Destination address equal source address');
     }
 
+    const fromPubkey = new web3.PublicKey(this.#publicKey);
     let toPublicKey;
     try {
       toPublicKey = new web3.PublicKey(to);
@@ -352,44 +466,82 @@ export default class SolanaWallet {
       throw error;
     }
 
-    const totalFee = new BigNumber(fee, 10);
-    const csFee = this.#calculateCsFee(amount);
+    let csFee;
+    let totalFee;
+    if (this.#crypto.type === 'coin') {
+      totalFee = new BigNumber(fee, 10);
+      csFee = this.#calculateCsFee(amount);
 
-    if (!totalFee.isFinite() || totalFee.isLessThan(csFee.plus(this.#minerFee))) {
-      throw new Error('Invalid fee');
-    }
-    if (this.#balance.isLessThan(amount.plus(totalFee))) {
-      throw new Error('Insufficient funds');
+      if (!totalFee.isFinite() || totalFee.isLessThan(csFee.plus(this.#minerFee))) {
+        throw new Error('Invalid fee');
+      }
+      if (this.#balance.isLessThan(amount.plus(totalFee))) {
+        throw new Error('Insufficient funds');
+      }
+    } else {
+      totalFee = this.#minerFee;
     }
 
-    const fromPubkey = new web3.PublicKey(this.#publicKey);
     const latestBlockhash = await this.#getLatestBlockHash();
     const tx = new web3.Transaction({
-      recentBlockhash: latestBlockhash.blockhash,
+      blockhash: latestBlockhash.blockhash,
+      lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
     });
-    const instructions = [];
-    tx.add(web3.SystemProgram.transfer({
-      fromPubkey,
-      toPubkey: toPublicKey,
-      lamports: amount.toString(10),
-    }));
-    instructions.push({
-      source: fromPubkey.toBase58(),
-      destination: to,
-      amount: amount.toString(10),
-    });
+    //const instructions = [];
 
-    if (csFee.isGreaterThan(0)) {
+    if (this.#crypto.type === 'coin') {
       tx.add(web3.SystemProgram.transfer({
         fromPubkey,
-        toPubkey: new web3.PublicKey(this.#csFeeAddresses[0]),
-        lamports: csFee.toString(10),
+        toPubkey: toPublicKey,
+        lamports: amount.toString(10),
       }));
+      /*
       instructions.push({
         source: fromPubkey.toBase58(),
-        destination: this.#csFeeAddresses[0],
-        amount: csFee.toString(10),
+        destination: to,
+        amount: amount.toString(10),
       });
+      */
+
+      if (csFee.isGreaterThan(0)) {
+        tx.add(web3.SystemProgram.transfer({
+          fromPubkey,
+          toPubkey: new web3.PublicKey(this.#csFeeAddresses[0]),
+          lamports: csFee.toString(10),
+        }));
+        /*
+        instructions.push({
+          source: fromPubkey.toBase58(),
+          destination: this.#csFeeAddresses[0],
+          amount: csFee.toString(10),
+        });
+        */
+      }
+    } else {
+      // token
+      const mint = new web3.PublicKey(this.#crypto.address);
+      const sourceAddress = await spl.getAssociatedTokenAddress(mint, fromPubkey);
+      const destinationAddress = await spl.getAssociatedTokenAddress(mint, toPublicKey);
+      const info = await this.#getAccountInfo(destinationAddress);
+      if (!info.data) {
+        // token account doesn't exist
+        tx.add(spl.createAssociatedTokenAccountInstruction(fromPubkey, destinationAddress, toPublicKey, mint));
+        /*
+        instructions.push({
+          source: fromPubkey.toBase58(),
+          destination: toPublicKey.toBase58(),
+          amount: this.#rent.toString(10),
+        });
+        */
+      }
+      tx.add(spl.createTransferInstruction(sourceAddress, destinationAddress, fromPubkey, amount.toNumber()));
+      /*
+      instructions.push({
+        source: fromPubkey.toBase58(),
+        destination: toPublicKey.toBase58(),
+        amount: amount.toString(10),
+      });
+      */
     }
 
     return {
@@ -397,11 +549,11 @@ export default class SolanaWallet {
       tx,
       to,
       amount: amount.negated().toString(10),
-      total: amount.plus(totalFee),
+      total: this.#crypto.type === 'coin' ? amount.plus(totalFee) : amount,
       timestamp: new Date(),
       fee: totalFee.toString(10),
       isIncoming: false,
-      instructions,
+      //instructions,
       confirmed: true,
       sign() {
         this.wallet.signTx(tx);

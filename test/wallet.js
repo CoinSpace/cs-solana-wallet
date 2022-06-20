@@ -36,6 +36,7 @@ const FEE_FOR_MESSAGE = {
 const crypto = {
   _id: 'solana@solana',
   platform: 'solana',
+  type: 'coin',
 };
 const cache = { get: () => {}, set: () => {} };
 
@@ -60,6 +61,7 @@ describe('Wallet', () => {
         apiNode: 'node',
         apiWeb: 'web',
         crypto,
+        platformCrypto: crypto,
         cache,
       });
       assert.strictEqual(wallet.isLocked, false);
@@ -72,6 +74,7 @@ describe('Wallet', () => {
         apiNode: 'node',
         apiWeb: 'web',
         crypto,
+        platformCrypto: crypto,
         cache,
       });
       assert.strictEqual(wallet.isLocked, true);
@@ -86,6 +89,7 @@ describe('Wallet', () => {
         apiNode: 'node',
         apiWeb: 'web',
         crypto,
+        platformCrypto: crypto,
         cache,
       });
       assert.strictEqual(wallet.isLocked, false);
@@ -102,6 +106,7 @@ describe('Wallet', () => {
         apiNode: 'node',
         apiWeb: 'web',
         crypto,
+        platformCrypto: crypto,
         cache,
       });
       assert.strictEqual(wallet.isLocked, true);
@@ -118,6 +123,7 @@ describe('Wallet', () => {
         apiNode: 'node',
         apiWeb: 'web',
         crypto,
+        platformCrypto: crypto,
         cache,
       });
       const publicKey = wallet.publicKey();
@@ -138,6 +144,7 @@ describe('Wallet', () => {
         apiNode: 'node',
         apiWeb: 'web',
         crypto,
+        platformCrypto: crypto,
         cache,
       });
       await wallet.load();
@@ -156,6 +163,7 @@ describe('Wallet', () => {
         apiNode: 'node',
         apiWeb: 'web',
         crypto,
+        platformCrypto: crypto,
         cache,
       });
       await wallet.load();
@@ -174,6 +182,7 @@ describe('Wallet', () => {
         apiNode: 'node',
         apiWeb: 'web',
         crypto,
+        platformCrypto: crypto,
         cache,
       });
       await wallet.load();
@@ -194,6 +203,7 @@ describe('Wallet', () => {
         apiNode: 'node',
         apiWeb: 'web',
         crypto,
+        platformCrypto: crypto,
         cache,
       });
       await wallet.load();
@@ -219,6 +229,7 @@ describe('Wallet', () => {
         apiNode: 'node',
         apiWeb: 'web',
         crypto,
+        platformCrypto: crypto,
         cache,
       });
       await wallet.load();
@@ -244,6 +255,7 @@ describe('Wallet', () => {
         apiNode: 'node',
         apiWeb: 'web',
         crypto,
+        platformCrypto: crypto,
         cache,
       });
       await wallet.load();
@@ -269,6 +281,7 @@ describe('Wallet', () => {
         apiNode: 'node',
         apiWeb: 'web',
         crypto,
+        platformCrypto: crypto,
         cache,
       });
       await wallet.load();
@@ -294,6 +307,7 @@ describe('Wallet', () => {
         apiNode: 'node',
         apiWeb: 'web',
         crypto,
+        platformCrypto: crypto,
         cache,
       });
       await wallet.load();
@@ -319,6 +333,7 @@ describe('Wallet', () => {
         apiNode: 'node',
         apiWeb: 'web',
         crypto,
+        platformCrypto: crypto,
         cache,
       });
       await wallet.load();
@@ -347,6 +362,7 @@ describe('Wallet', () => {
         apiNode: 'node',
         apiWeb: 'web',
         crypto,
+        platformCrypto: crypto,
         cache,
       });
       await wallet.load();
@@ -371,6 +387,7 @@ describe('Wallet', () => {
         apiNode: 'node',
         apiWeb: 'web',
         crypto,
+        platformCrypto: crypto,
         cache,
       });
       await wallet.load();
@@ -454,6 +471,7 @@ describe('Wallet', () => {
         apiNode: 'node',
         apiWeb: 'web',
         crypto,
+        platformCrypto: crypto,
         cache,
       });
       await wallet.load();
@@ -484,6 +502,7 @@ describe('Wallet', () => {
         apiNode: 'node',
         apiWeb: 'web',
         crypto,
+        platformCrypto: crypto,
         cache,
       });
       await wallet.load();
@@ -516,6 +535,7 @@ describe('Wallet', () => {
         apiNode: 'node',
         apiWeb: 'web',
         crypto,
+        platformCrypto: crypto,
         cache,
       });
       await wallet.load();
@@ -538,6 +558,7 @@ describe('Wallet', () => {
         apiNode: 'node',
         apiWeb: 'web',
         crypto,
+        platformCrypto: crypto,
         cache,
       });
       await wallet.load();
