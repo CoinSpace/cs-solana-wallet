@@ -418,8 +418,7 @@ describe('Wallet', () => {
       await assert.rejects(async () => {
         await wallet.createTx(
           DESTIONATION_ADDRESS,
-          '0',
-          '1005000'
+          '0'
         );
       }, {
         message: 'Invalid value',
@@ -430,15 +429,14 @@ describe('Wallet', () => {
       await assert.rejects(async () => {
         await wallet.createTx(
           DESTIONATION_ADDRESS,
-          '100000000000000',
-          '100005000'
+          '100000000000000'
         );
       }, {
         message: 'Insufficient funds',
       });
     });
 
-    it('should fail (invalid fee)', async () => {
+    it.skip('should fail (invalid fee)', async () => {
       await assert.rejects(async () => {
         await wallet.createTx(
           DESTIONATION_ADDRESS,
@@ -453,8 +451,7 @@ describe('Wallet', () => {
     it('should create valid transaction', async () => {
       const transaction = await wallet.createTx(
         DESTIONATION_ADDRESS,
-        '15000000000',
-        '7505000'
+        '15000000000'
       );
       assert.strictEqual(transaction.tx.instructions.length, 2);
       const instructionTransfer = web3.SystemInstruction.decodeTransfer(transaction.tx.instructions[0]);
@@ -468,8 +465,7 @@ describe('Wallet', () => {
     it('should create valid transaction with max amount', async () => {
       const transaction = await wallet.createTx(
         DESTIONATION_ADDRESS,
-        '59970009996',
-        '29990004'
+        '59970009996'
       );
       assert.strictEqual(transaction.tx.instructions.length, 2);
       const instructionTransfer = web3.SystemInstruction.decodeTransfer(transaction.tx.instructions[0]);
@@ -501,8 +497,7 @@ describe('Wallet', () => {
 
       const transaction = await wallet.createTx(
         DESTIONATION_ADDRESS,
-        '2000000',
-        '50000'
+        '2000000'
       );
       assert.strictEqual(transaction.tx.instructions.length, 1);
       const instructionTransfer = web3.SystemInstruction.decodeTransfer(transaction.tx.instructions[0]);
@@ -593,8 +588,7 @@ describe('Wallet', () => {
 
       const raw = await wallet.createTx(
         DESTIONATION_ADDRESS,
-        '15000000000',
-        '7505000'
+        '15000000000'
       );
 
       const transaction = await wallet.sendTx(raw.sign());

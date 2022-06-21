@@ -444,7 +444,7 @@ export default class SolanaWallet {
     };
   }
 
-  async createTx(to, value, fee) {
+  async createTx(to, value) {
     if (!to) {
       throw new Error('Invalid address');
     }
@@ -487,7 +487,7 @@ export default class SolanaWallet {
         }
       }
 
-      if (!totalFee.isFinite() || totalFee.isGreaterThan(fee)) {
+      if (!totalFee.isFinite()) {
         throw new Error('Invalid fee');
       }
       if (this.#balance.isLessThan(amount.plus(totalFee))) {
@@ -519,7 +519,7 @@ export default class SolanaWallet {
         totalFee = totalFee.plus(this.#rent);
         tx.add(spl.createAssociatedTokenAccountInstruction(fromPubkey, destinationAddress, toPublicKey, mint));
       }
-      if (!totalFee.isFinite() || totalFee.isGreaterThan(fee)) {
+      if (!totalFee.isFinite()) {
         throw new Error('Invalid fee');
       }
       if (this.#solanaBalance.isLessThan(totalFee)) {
