@@ -10,9 +10,12 @@ const RANDOM_SEED = '3e818cec5efc7505369fae3f162af61130b673fa9b40e5955d5cde22a85
 const RANDOM_PUBLIC_KEY = '"b15ad93bfe17665bc6e251526f81ab42c5cfae28365f39150298f2b91dc9f0ab"';
 
 const TRANSACTIONS = JSON.parse(await fs.readFile('./test/fixtures/transactions.json'));
+const TOKEN_TRANSACTIONS = JSON.parse(await fs.readFile('./test/fixtures/token-transactions.json'));
 
 const WALLET_ADDRESS = 'CwKWYm4nepcBV7T3dYMfP5sTu6iVVZTsAF6RxmJn1Wjc';
+const TOKEN_ACCOUNT = '3MWaiVQUExbKDVtYNSEDuCaSiT1YM4QKbzRFaQ9jUchy';
 const DESTIONATION_ADDRESS = '99znZjNvScoKn8WB3eQ96b2xq6umdnECWAZDzzyHDWHx';
+const DESTIONATION_TOKEN_ACCCOUNT = '8nqMrvMM1bZMSzsifppcM9KTURpwqxkRTxkRPvvVAZBC';
 const CS_FEE_ADDRESS = '99znZjNvScoKn8WB3eQ96b2xq6umdnECWAZDzzyHDWHx';
 const CS_FEE = {
   addresses: [CS_FEE_ADDRESS],
@@ -38,6 +41,12 @@ const crypto = {
   platform: 'solana',
   type: 'coin',
 };
+const token = {
+  _id: 'tether@solana',
+  platform: 'solana',
+  type: 'token',
+  address: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+};
 const cache = { get: () => {}, set: () => {} };
 
 function mockRequest(handlers = {}) {
@@ -48,7 +57,7 @@ function mockRequest(handlers = {}) {
         return handlers[url];
       }
     }
-    throw new Error(`Not found "${config.url}"`);
+    throw new Error(`Not found '${config.baseURL}/${config.url}'`);
   };
 }
 
@@ -138,6 +147,7 @@ describe('Wallet', () => {
         request: mockRequest({
           'web/api/v3/csfee': CS_FEE,
           [`node/api/v1/addresses/${WALLET_ADDRESS}/balance`]: { balance: 0 },
+          'node/api/v1/minimumBalanceForRentExemptAccount': { rent: 2039280 },
           'node/api/v1/latestBlockhash': LATEST_BLOCKHASH,
           'node/api/v1/feeForMessage': FEE_FOR_MESSAGE,
         }),
@@ -157,6 +167,7 @@ describe('Wallet', () => {
         request: mockRequest({
           'web/api/v3/csfee': CS_FEE,
           [`node/api/v1/addresses/${WALLET_ADDRESS}/balance`]: { balance: 6000000 },
+          'node/api/v1/minimumBalanceForRentExemptAccount': { rent: 2039280 },
           'node/api/v1/latestBlockhash': LATEST_BLOCKHASH,
           'node/api/v1/feeForMessage': FEE_FOR_MESSAGE,
         }),
@@ -176,6 +187,7 @@ describe('Wallet', () => {
         request: mockRequest({
           'web/api/v3/csfee': CS_FEE,
           [`node/api/v1/addresses/${WALLET_ADDRESS}/balance`]: { balance: 6000000 },
+          'node/api/v1/minimumBalanceForRentExemptAccount': { rent: 2039280 },
           'node/api/v1/latestBlockhash': LATEST_BLOCKHASH,
           'node/api/v1/feeForMessage': FEE_FOR_MESSAGE,
         }),
@@ -197,6 +209,7 @@ describe('Wallet', () => {
         request: mockRequest({
           'web/api/v3/csfee': CS_FEE,
           [`node/api/v1/addresses/${WALLET_ADDRESS}/balance`]: { balance: 0 },
+          'node/api/v1/minimumBalanceForRentExemptAccount': { rent: 2039280 },
           'node/api/v1/latestBlockhash': LATEST_BLOCKHASH,
           'node/api/v1/feeForMessage': FEE_FOR_MESSAGE,
         }),
@@ -211,7 +224,7 @@ describe('Wallet', () => {
         {
           name: 'default',
           default: true,
-          estimate: '1005000',
+          estimate: '3044280',
           maxAmount: '0',
         },
       ]);
@@ -223,6 +236,7 @@ describe('Wallet', () => {
         request: mockRequest({
           'web/api/v3/csfee': null,
           [`node/api/v1/addresses/${WALLET_ADDRESS}/balance`]: { balance: 0 },
+          'node/api/v1/minimumBalanceForRentExemptAccount': { rent: 2039280 },
           'node/api/v1/latestBlockhash': LATEST_BLOCKHASH,
           'node/api/v1/feeForMessage': FEE_FOR_MESSAGE,
         }),
@@ -237,7 +251,7 @@ describe('Wallet', () => {
         {
           name: 'default',
           default: true,
-          estimate: '5000',
+          estimate: '2044280',
           maxAmount: '0',
         },
       ]);
@@ -249,6 +263,7 @@ describe('Wallet', () => {
         request: mockRequest({
           'web/api/v3/csfee': CS_FEE,
           [`node/api/v1/addresses/${WALLET_ADDRESS}/balance`]: { balance: 600000000 },
+          'node/api/v1/minimumBalanceForRentExemptAccount': { rent: 2039280 },
           'node/api/v1/latestBlockhash': LATEST_BLOCKHASH,
           'node/api/v1/feeForMessage': FEE_FOR_MESSAGE,
         }),
@@ -263,8 +278,8 @@ describe('Wallet', () => {
         {
           name: 'default',
           default: true,
-          estimate: '1005000',
-          maxAmount: '598995000',
+          estimate: '3044280',
+          maxAmount: '596955720',
         },
       ]);
     });
@@ -275,6 +290,7 @@ describe('Wallet', () => {
         request: mockRequest({
           'web/api/v3/csfee': CS_FEE,
           [`node/api/v1/addresses/${WALLET_ADDRESS}/balance`]: { balance: 60000000000 },
+          'node/api/v1/minimumBalanceForRentExemptAccount': { rent: 2039280 },
           'node/api/v1/latestBlockhash': LATEST_BLOCKHASH,
           'node/api/v1/feeForMessage': FEE_FOR_MESSAGE,
         }),
@@ -289,8 +305,8 @@ describe('Wallet', () => {
         {
           name: 'default',
           default: true,
-          estimate: '7505000',
-          maxAmount: '59970009996',
+          estimate: '9544280',
+          maxAmount: '59967971735',
         },
       ]);
     });
@@ -301,6 +317,7 @@ describe('Wallet', () => {
         request: mockRequest({
           'web/api/v3/csfee': CS_FEE,
           [`node/api/v1/addresses/${WALLET_ADDRESS}/balance`]: { balance: 60000000000 },
+          'node/api/v1/minimumBalanceForRentExemptAccount': { rent: 2039280 },
           'node/api/v1/latestBlockhash': LATEST_BLOCKHASH,
           'node/api/v1/feeForMessage': FEE_FOR_MESSAGE,
         }),
@@ -311,12 +328,12 @@ describe('Wallet', () => {
         cache,
       });
       await wallet.load();
-      assert.deepStrictEqual(wallet.estimateFees('59970009996'), [
+      assert.deepStrictEqual(wallet.estimateFees('59967971735'), [
         {
           name: 'default',
           default: true,
-          estimate: '29990004',
-          maxAmount: '59970009996',
+          estimate: '32028265',
+          maxAmount: '59967971735',
         },
       ]);
     });
@@ -327,6 +344,7 @@ describe('Wallet', () => {
         request: mockRequest({
           'web/api/v3/csfee': CS_FEE,
           [`node/api/v1/addresses/${WALLET_ADDRESS}/balance`]: { balance: 600000000 },
+          'node/api/v1/minimumBalanceForRentExemptAccount': { rent: 2039280 },
           'node/api/v1/latestBlockhash': LATEST_BLOCKHASH,
           'node/api/v1/feeForMessage': FEE_FOR_MESSAGE,
         }),
@@ -341,8 +359,8 @@ describe('Wallet', () => {
         {
           name: 'default',
           default: true,
-          estimate: '100005000',
-          maxAmount: '598995000',
+          estimate: '102044280',
+          maxAmount: '596955720',
         },
       ]);
     });
@@ -356,6 +374,7 @@ describe('Wallet', () => {
         request: mockRequest({
           'web/api/v3/csfee': null,
           [`node/api/v1/addresses/${WALLET_ADDRESS}/balance`]: { balance: 0 },
+          'node/api/v1/minimumBalanceForRentExemptAccount': { rent: 2039280 },
           'node/api/v1/latestBlockhash': LATEST_BLOCKHASH,
           'node/api/v1/feeForMessage': FEE_FOR_MESSAGE,
         }),
@@ -381,6 +400,8 @@ describe('Wallet', () => {
         request: mockRequest({
           'web/api/v3/csfee': CS_FEE,
           [`node/api/v1/addresses/${WALLET_ADDRESS}/balance`]: { balance: 60000000000 },
+          'node/api/v1/minimumBalanceForRentExemptAccount': { rent: 2039280 },
+          [`node/api/v1/addresses/${DESTIONATION_ADDRESS}/info`]: { data: {} },
           'node/api/v1/latestBlockhash': LATEST_BLOCKHASH,
           'node/api/v1/feeForMessage': FEE_FOR_MESSAGE,
         }),
@@ -422,7 +443,7 @@ describe('Wallet', () => {
         await wallet.createTx(
           DESTIONATION_ADDRESS,
           '2000000',
-          '1000000'
+          '10000'
         );
       }, {
         message: 'Invalid fee',
@@ -465,6 +486,8 @@ describe('Wallet', () => {
         request: mockRequest({
           'web/api/v3/csfee': null,
           [`node/api/v1/addresses/${WALLET_ADDRESS}/balance`]: { balance: 60000000000 },
+          'node/api/v1/minimumBalanceForRentExemptAccount': { rent: 2039280 },
+          [`node/api/v1/addresses/${DESTIONATION_ADDRESS}/info`]: { data: {} },
           'node/api/v1/latestBlockhash': LATEST_BLOCKHASH,
           'node/api/v1/feeForMessage': FEE_FOR_MESSAGE,
         }),
@@ -486,6 +509,64 @@ describe('Wallet', () => {
       assert.strictEqual(instructionTransfer.lamports, 2000000n);
       assert.strictEqual(instructionTransfer.toPubkey.toBase58(), DESTIONATION_ADDRESS);
     });
+
+    it('should create valid token transaction to new account', async () => {
+      const wallet = new SolanaWallet({
+        publicKey: RANDOM_PUBLIC_KEY,
+        request: mockRequest({
+          // eslint-disable-next-line max-len
+          [`node/api/v1/addresses/${WALLET_ADDRESS}/token/4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU/balance`]: { balance: 6000000 },
+          [`node/api/v1/addresses/${WALLET_ADDRESS}/balance`]: { balance: 60000000000 },
+          'node/api/v1/minimumBalanceForRentExemptAccount': { rent: 2039280 },
+          'node/api/v1/latestBlockhash': LATEST_BLOCKHASH,
+          'node/api/v1/feeForMessage': FEE_FOR_MESSAGE,
+          [`node/api/v1/addresses/${TOKEN_ACCOUNT}/transactions`]: TOKEN_TRANSACTIONS,
+          [`node/api/v1/addresses/${DESTIONATION_TOKEN_ACCCOUNT}/info`]: {},
+        }),
+        apiNode: 'node',
+        apiWeb: 'web',
+        crypto: token,
+        platformCrypto: crypto,
+        cache,
+      });
+      await wallet.load();
+
+      const transaction = await wallet.createTx(
+        DESTIONATION_ADDRESS,
+        '2000000'
+      );
+      // create account + transfer
+      assert.strictEqual(transaction.tx.instructions.length, 2);
+    });
+
+    it('should create valid token transaction to existed account', async () => {
+      const wallet = new SolanaWallet({
+        publicKey: RANDOM_PUBLIC_KEY,
+        request: mockRequest({
+          // eslint-disable-next-line max-len
+          [`node/api/v1/addresses/${WALLET_ADDRESS}/token/4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU/balance`]: { balance: 6000000 },
+          [`node/api/v1/addresses/${WALLET_ADDRESS}/balance`]: { balance: 60000000000 },
+          'node/api/v1/minimumBalanceForRentExemptAccount': { rent: 2039280 },
+          'node/api/v1/latestBlockhash': LATEST_BLOCKHASH,
+          'node/api/v1/feeForMessage': FEE_FOR_MESSAGE,
+          [`node/api/v1/addresses/${TOKEN_ACCOUNT}/transactions`]: TOKEN_TRANSACTIONS,
+          [`node/api/v1/addresses/${DESTIONATION_TOKEN_ACCCOUNT}/info`]: { data: {} },
+        }),
+        apiNode: 'node',
+        apiWeb: 'web',
+        crypto: token,
+        platformCrypto: crypto,
+        cache,
+      });
+      await wallet.load();
+
+      const transaction = await wallet.createTx(
+        DESTIONATION_ADDRESS,
+        '2000000'
+      );
+      // only transfer
+      assert.strictEqual(transaction.tx.instructions.length, 1);
+    });
   });
 
   describe('sendTx', () => {
@@ -495,6 +576,8 @@ describe('Wallet', () => {
         request: mockRequest({
           'web/api/v3/csfee': CS_FEE,
           [`node/api/v1/addresses/${WALLET_ADDRESS}/balance`]: { balance: 60000000000 },
+          'node/api/v1/minimumBalanceForRentExemptAccount': { rent: 2039280 },
+          [`node/api/v1/addresses/${DESTIONATION_ADDRESS}/info`]: { data: {} },
           'node/api/v1/latestBlockhash': LATEST_BLOCKHASH,
           'node/api/v1/feeForMessage': FEE_FOR_MESSAGE,
           'node/api/v1/tx/submit': '12345',
@@ -522,12 +605,13 @@ describe('Wallet', () => {
   });
 
   describe('loadTxs', () => {
-    it('works', async () => {
+    it('works for coin', async () => {
       const wallet = new SolanaWallet({
         publicKey: RANDOM_PUBLIC_KEY,
         request: mockRequest({
           'web/api/v3/csfee': CS_FEE,
           [`node/api/v1/addresses/${WALLET_ADDRESS}/balance`]: { balance: 0 },
+          'node/api/v1/minimumBalanceForRentExemptAccount': { rent: 2039280 },
           'node/api/v1/latestBlockhash': LATEST_BLOCKHASH,
           'node/api/v1/feeForMessage': FEE_FOR_MESSAGE,
           [`node/api/v1/addresses/${WALLET_ADDRESS}/transactions`]: TRANSACTIONS,
@@ -543,6 +627,40 @@ describe('Wallet', () => {
       assert.strictEqual(res.hasMoreTxs, false);
       assert.strictEqual(res.txs.length, 2);
     });
+
+    it('works for token', async () => {
+      const wallet = new SolanaWallet({
+        publicKey: RANDOM_PUBLIC_KEY,
+        request: mockRequest({
+          'web/api/v3/csfee': CS_FEE,
+          // eslint-disable-next-line max-len
+          [`node/api/v1/addresses/${WALLET_ADDRESS}/token/4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU/balance`]: { balance: 0 },
+          [`node/api/v1/addresses/${WALLET_ADDRESS}/balance`]: { balance: 60000000000 },
+          'node/api/v1/minimumBalanceForRentExemptAccount': { rent: 2039280 },
+          'node/api/v1/latestBlockhash': LATEST_BLOCKHASH,
+          'node/api/v1/feeForMessage': FEE_FOR_MESSAGE,
+          [`node/api/v1/addresses/${TOKEN_ACCOUNT}/transactions`]: TOKEN_TRANSACTIONS,
+        }),
+        apiNode: 'node',
+        apiWeb: 'web',
+        crypto: token,
+        platformCrypto: crypto,
+        cache,
+      });
+      await wallet.load();
+      const res = await wallet.loadTxs();
+      assert.strictEqual(res.hasMoreTxs, false);
+      assert.strictEqual(res.txs.length, 2);
+      assert.strictEqual(res.txs[0].isIncoming, false);
+      assert.strictEqual(res.txs[0].amount, '-10000');
+      assert.strictEqual(res.txs[0].to, 'F6s8Vnf6wusSEWVmuRUQfUHWjraDsNuTj2Aq6tBTik3y');
+      assert.strictEqual(res.txs[0].instructions[0].source, WALLET_ADDRESS);
+      assert.strictEqual(res.txs[0].instructions[0].destination, 'F6s8Vnf6wusSEWVmuRUQfUHWjraDsNuTj2Aq6tBTik3y');
+      assert.strictEqual(res.txs[1].isIncoming, true);
+      assert.strictEqual(res.txs[1].amount, '50000');
+      assert.strictEqual(res.txs[1].instructions[0].source, 'CfU67ZPpEXS3ZLAjXw9BgZZCTBJTagpzwKTUarBG4r7J');
+      assert.strictEqual(res.txs[1].instructions[0].destination, WALLET_ADDRESS);
+    });
   });
 
   describe('exportPrivateKeys', () => {
@@ -552,6 +670,7 @@ describe('Wallet', () => {
         request: mockRequest({
           'web/api/v3/csfee': CS_FEE,
           [`node/api/v1/addresses/${WALLET_ADDRESS}/balance`]: { balance: 0 },
+          'node/api/v1/minimumBalanceForRentExemptAccount': { rent: 2039280 },
           'node/api/v1/latestBlockhash': LATEST_BLOCKHASH,
           'node/api/v1/feeForMessage': FEE_FOR_MESSAGE,
         }),

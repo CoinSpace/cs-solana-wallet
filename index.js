@@ -12,6 +12,7 @@ export default class SolanaWallet {
   #platformCrypto;
   #cache;
   #balance;
+  #solanaBalance;
   #request;
   #apiNode;
   #apiWeb;
@@ -26,9 +27,9 @@ export default class SolanaWallet {
     name: 'default',
     default: true,
   }];
-  #rent;
   #tokenAccount;
   #minerFee;
+  #rent;
   #csFee;
   #csMinFee;
   #csMaxFee;
@@ -137,14 +138,15 @@ export default class SolanaWallet {
   async load() {
     await this.#loadCsFee();
     if (this.#crypto.type === 'token') {
-      this.#rent = await this.#calculateMinimumBalanceForRentExemption();
       this.#tokenAccount = (await spl.getAssociatedTokenAddress(
         new web3.PublicKey(this.#crypto.address),
         new web3.PublicKey(this.#publicKey)
       )).toBase58();
+      this.#solanaBalance = await this.#calculateBalance();
     }
     this.#minerFee = await this.#calculateMinerFee();
-    this.#balance = await this.#calculateBalance();
+    this.#rent = await this.#calculateMinimumBalanceForRentExemption();
+    this.#balance = this.#crypto.type === 'coin' ? await this.#calculateBalance() : await this.#calculateTokenBalance();
     this.#cache.set('balance', this.#balance);
     this.#txsCursor = undefined;
     this.#hasMoreTxs = true;
@@ -170,6 +172,11 @@ export default class SolanaWallet {
       if (err.response &&
           err.response.data === 'Transaction leaves an account with a lower balance than rent-exempt minimum') {
         throw new Error(err.response.data);
+      }
+      if (err.response && err.response.data === 'Insufficient funds for token transaction') {
+        const e = new Error(err.response.data);
+        e.required = this.#minerFee.plus(this.#rent).toString(10);
+        throw e;
       }
       console.error(err);
       throw new Error('cs-node-error');
@@ -202,15 +209,16 @@ export default class SolanaWallet {
   }
 
   async #calculateBalance() {
-    if (this.#crypto.type === 'token') {
-      const { balance } = await this.#requestNode({
-        url: `api/v1/addresses/${this.#getAddress()}/token/${this.#crypto.address}/balance`,
-        method: 'get',
-      });
-      return new BigNumber(balance);
-    }
     const { balance } = await this.#requestNode({
       url: `api/v1/addresses/${this.#getAddress()}/balance`,
+      method: 'get',
+    });
+    return new BigNumber(balance);
+  }
+
+  async #calculateTokenBalance() {
+    const { balance } = await this.#requestNode({
+      url: `api/v1/addresses/${this.#getAddress()}/token/${this.#crypto.address}/balance`,
       method: 'get',
     });
     return new BigNumber(balance);
@@ -223,22 +231,12 @@ export default class SolanaWallet {
     });
   }
 
-  #getMinimumBalanceForRentExemption() {
-    return this.#requestNode({
-      url: 'api/v1/minimumBalanceForRentExemptAccount',
-      method: 'get',
-      params: {
-        size: spl.ACCOUNT_SIZE,
-      },
-    });
-  }
-
-  async #getAccountInfo(address) {
+  async #isAccountExists(address) {
     const info = await this.#requestNode({
       url: `api/v1/addresses/${address}/info`,
       method: 'get',
     });
-    return info;
+    return !!info.data;
   }
 
   #calculateCsFee(value) {
@@ -255,7 +253,13 @@ export default class SolanaWallet {
   }
 
   async #calculateMinimumBalanceForRentExemption() {
-    const { rent } = await this.#getMinimumBalanceForRentExemption();
+    const { rent } = await this.#requestNode({
+      url: 'api/v1/minimumBalanceForRentExemptAccount',
+      method: 'get',
+      params: {
+        size: spl.ACCOUNT_SIZE,
+      },
+    });
     return new BigNumber(rent);
   }
 
@@ -279,25 +283,22 @@ export default class SolanaWallet {
         message: tx.compileMessage().serialize().toString('base64'),
       },
     });
-    if (this.#crypto.type === 'coin') {
-      return new BigNumber(fee.value);
-    }
-    // token
-    return new BigNumber(fee.value).plus(this.#rent);
+    return new BigNumber(fee.value);
   }
 
   #calculateMaxAmount(feeRate) {
     if (feeRate.name !== 'default') {
       throw new Error('Unsupported fee rate');
     }
+    const fee = this.#minerFee.plus(this.#rent);
     if (this.#crypto.type === 'token') {
       return this.#balance;
     }
-    if (this.#balance.isLessThanOrEqualTo(this.#minerFee)) {
+    if (this.#balance.isLessThanOrEqualTo(fee)) {
       return new BigNumber(0);
     }
-    const csFee = this.#reverseCsFee(this.#balance.minus(this.#minerFee));
-    const maxAmount = this.#balance.minus(this.#minerFee).minus(csFee);
+    const csFee = this.#reverseCsFee(this.#balance.minus(fee));
+    const maxAmount = this.#balance.minus(fee).minus(csFee);
     if (maxAmount.isLessThan(0)) {
       return new BigNumber(0);
     }
@@ -317,7 +318,7 @@ export default class SolanaWallet {
       return {
         name: feeRate.name,
         default: feeRate.default === true,
-        estimate: csFee.plus(this.#minerFee).toString(10),
+        estimate: csFee.plus(this.#minerFee).plus(this.#rent).toString(10),
         maxAmount: feeRate.maxAmount.toString(10),
       };
     });
@@ -436,7 +437,7 @@ export default class SolanaWallet {
       to,
       amount: amount.toString(10),
       timestamp: new Date(tx.blockTime * 1000).getTime(),
-      fee: totalFee.plus(tx.meta.fee),
+      fee: !token ? totalFee.plus(tx.meta.fee).toString(10) : undefined,
       isIncoming,
       instructions,
       confirmed: true,
@@ -468,40 +469,36 @@ export default class SolanaWallet {
 
     let csFee;
     let totalFee;
-    if (this.#crypto.type === 'coin') {
-      totalFee = new BigNumber(fee, 10);
-      csFee = this.#calculateCsFee(amount);
-
-      if (!totalFee.isFinite() || totalFee.isLessThan(csFee.plus(this.#minerFee))) {
-        throw new Error('Invalid fee');
-      }
-      if (this.#balance.isLessThan(amount.plus(totalFee))) {
-        throw new Error('Insufficient funds');
-      }
-    } else {
-      totalFee = this.#minerFee;
-    }
 
     const latestBlockhash = await this.#getLatestBlockHash();
     const tx = new web3.Transaction({
       blockhash: latestBlockhash.blockhash,
       lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
     });
-    //const instructions = [];
 
     if (this.#crypto.type === 'coin') {
+      const isAccountExists = await this.#isAccountExists(toPublicKey.toBase58());
+      csFee = this.#calculateCsFee(amount);
+      totalFee = csFee.plus(this.#minerFee);
+      if (!isAccountExists) {
+        totalFee = totalFee.plus(this.#rent);
+        if (amount.isLessThan(this.#rent)) {
+          throw new Error('Transaction leaves an account with a lower balance than rent-exempt minimum');
+        }
+      }
+
+      if (!totalFee.isFinite() || totalFee.isGreaterThan(fee)) {
+        throw new Error('Invalid fee');
+      }
+      if (this.#balance.isLessThan(amount.plus(totalFee))) {
+        throw new Error('Insufficient funds');
+      }
+
       tx.add(web3.SystemProgram.transfer({
         fromPubkey,
         toPubkey: toPublicKey,
         lamports: amount.toString(10),
       }));
-      /*
-      instructions.push({
-        source: fromPubkey.toBase58(),
-        destination: to,
-        amount: amount.toString(10),
-      });
-      */
 
       if (csFee.isGreaterThan(0)) {
         tx.add(web3.SystemProgram.transfer({
@@ -509,39 +506,28 @@ export default class SolanaWallet {
           toPubkey: new web3.PublicKey(this.#csFeeAddresses[0]),
           lamports: csFee.toString(10),
         }));
-        /*
-        instructions.push({
-          source: fromPubkey.toBase58(),
-          destination: this.#csFeeAddresses[0],
-          amount: csFee.toString(10),
-        });
-        */
       }
     } else {
       // token
+      totalFee = this.#minerFee;
       const mint = new web3.PublicKey(this.#crypto.address);
       const sourceAddress = await spl.getAssociatedTokenAddress(mint, fromPubkey);
       const destinationAddress = await spl.getAssociatedTokenAddress(mint, toPublicKey);
-      const info = await this.#getAccountInfo(destinationAddress);
-      if (!info.data) {
+      const isAccountExists = await this.#isAccountExists(destinationAddress.toBase58());
+      if (!isAccountExists) {
         // token account doesn't exist
+        totalFee = totalFee.plus(this.#rent);
         tx.add(spl.createAssociatedTokenAccountInstruction(fromPubkey, destinationAddress, toPublicKey, mint));
-        /*
-        instructions.push({
-          source: fromPubkey.toBase58(),
-          destination: toPublicKey.toBase58(),
-          amount: this.#rent.toString(10),
-        });
-        */
+      }
+      if (!totalFee.isFinite() || totalFee.isGreaterThan(fee)) {
+        throw new Error('Invalid fee');
+      }
+      if (this.#solanaBalance.isLessThan(totalFee)) {
+        const err = new Error('Insufficient funds for token transaction');
+        err.required = totalFee.toString(10);
+        throw err;
       }
       tx.add(spl.createTransferInstruction(sourceAddress, destinationAddress, fromPubkey, amount.toNumber()));
-      /*
-      instructions.push({
-        source: fromPubkey.toBase58(),
-        destination: toPublicKey.toBase58(),
-        amount: amount.toString(10),
-      });
-      */
     }
 
     return {
@@ -553,7 +539,6 @@ export default class SolanaWallet {
       timestamp: new Date(),
       fee: totalFee.toString(10),
       isIncoming: false,
-      //instructions,
       confirmed: true,
       sign() {
         this.wallet.signTx(tx);
