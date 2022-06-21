@@ -138,10 +138,10 @@ export default class SolanaWallet {
   async load() {
     await this.#loadCsFee();
     if (this.#crypto.type === 'token') {
-      this.#tokenAccount = (await spl.getAssociatedTokenAddress(
+      this.#tokenAccount = (await this.#getAssociatedTokenAddress(
         new web3.PublicKey(this.#crypto.address),
         new web3.PublicKey(this.#publicKey)
-      )).toBase58();
+      ));
       this.#solanaBalance = await this.#calculateBalance();
     }
     this.#minerFee = await this.#calculateMinerFee();
@@ -311,6 +311,14 @@ export default class SolanaWallet {
     }
   }
 
+  async #getAssociatedTokenAddress(mint, owner) {
+    try {
+      return await spl.getAssociatedTokenAddress(mint, owner);
+    } catch (err) {
+      throw new Error('Invalid address');
+    }
+  }
+
   estimateFees(value = 0) {
     const amount = new BigNumber(value, 10);
     return this.#feeRates.map((feeRate) => {
@@ -328,7 +336,7 @@ export default class SolanaWallet {
     if (!this.#hasMoreTxs) {
       return [];
     }
-    const account = this.#crypto.type === 'coin' ? this.#getAddress() : this.#tokenAccount;
+    const account = this.#crypto.type === 'coin' ? this.#getAddress() : this.#tokenAccount.toBase58();
     const transactions = await this.#requestNode({
       url: `api/v1/addresses/${account}/transactions`,
       method: 'get',
@@ -366,7 +374,7 @@ export default class SolanaWallet {
       for (const postTokenBalance of tx.meta.postTokenBalances) {
         postTokenBalances.push({
           ...postTokenBalance,
-          account: (await spl.getAssociatedTokenAddress(
+          account: (await this.#getAssociatedTokenAddress(
             new web3.PublicKey(postTokenBalance.mint),
             new web3.PublicKey(postTokenBalance.owner)
           )).toBase58(),
@@ -511,8 +519,7 @@ export default class SolanaWallet {
       // token
       totalFee = this.#minerFee;
       const mint = new web3.PublicKey(this.#crypto.address);
-      const sourceAddress = await spl.getAssociatedTokenAddress(mint, fromPubkey);
-      const destinationAddress = await spl.getAssociatedTokenAddress(mint, toPublicKey);
+      const destinationAddress = await this.#getAssociatedTokenAddress(mint, toPublicKey);
       const isAccountExists = await this.#isAccountExists(destinationAddress.toBase58());
       if (!isAccountExists) {
         // token account doesn't exist
@@ -527,7 +534,7 @@ export default class SolanaWallet {
         err.required = totalFee.toString(10);
         throw err;
       }
-      tx.add(spl.createTransferInstruction(sourceAddress, destinationAddress, fromPubkey, amount.toNumber()));
+      tx.add(spl.createTransferInstruction(this.#tokenAccount, destinationAddress, fromPubkey, amount.toNumber()));
     }
 
     return {
