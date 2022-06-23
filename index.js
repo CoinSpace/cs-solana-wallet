@@ -487,9 +487,10 @@ export default class SolanaWallet {
     if (this.#crypto.type === 'coin') {
       const isAccountExists = await this.#isAccountExists(toPublicKey.toBase58());
       csFee = this.#calculateCsFee(amount);
-      totalFee = csFee.plus(this.#minerFee);
+      totalFee = csFee.plus(this.#minerFee).plus(this.#rent);
       if (!isAccountExists) {
-        totalFee = totalFee.plus(this.#rent);
+        //TODO correct fee
+        //totalFee = totalFee.plus(this.#rent);
         if (amount.isLessThan(this.#rent)) {
           throw new Error('Transaction leaves an account with a lower balance than rent-exempt minimum');
         }
@@ -517,13 +518,14 @@ export default class SolanaWallet {
       }
     } else {
       // token
-      totalFee = this.#minerFee;
+      totalFee = this.#minerFee.plus(this.#rent);
       const mint = new web3.PublicKey(this.#crypto.address);
       const destinationAddress = await this.#getAssociatedTokenAddress(mint, toPublicKey);
       const isAccountExists = await this.#isAccountExists(destinationAddress.toBase58());
       if (!isAccountExists) {
         // token account doesn't exist
-        totalFee = totalFee.plus(this.#rent);
+        //TODO correct fee
+        //totalFee = totalFee.plus(this.#rent);
         tx.add(spl.createAssociatedTokenAccountInstruction(fromPubkey, destinationAddress, toPublicKey, mint));
       }
       if (!totalFee.isFinite()) {
