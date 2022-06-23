@@ -403,19 +403,22 @@ export default class SolanaWallet {
           amount: instruction.parsed.info.lamports,
         });
       }
-      if (instruction.program === 'spl-token' && instruction.parsed.type === 'transfer') {
+      if (instruction.program === 'spl-token' && ['transfer', 'transferChecked'].includes(instruction.parsed.type)) {
         // Tokens
         const destination = postTokenBalances.find((item) => item.account === instruction.parsed.info.destination);
         if (destination && (!token || destination.mint === token)) {
+          const value = instruction.parsed.type === 'transfer'
+            ? instruction.parsed.info.amount
+            : instruction.parsed.info.tokenAmount.amount;
           if (destination.owner === address) {
             if (token) {
-              amount = amount.plus(instruction.parsed.info.amount);
+              amount = amount.plus(value);
             }
             isIncoming = true;
           }
           if (instruction.parsed.info.authority === address) {
             if (token) {
-              amount = amount.minus(instruction.parsed.info.amount);
+              amount = amount.minus(value);
             }
             to = destination.owner;
           }
@@ -423,7 +426,7 @@ export default class SolanaWallet {
             instructions.push({
               source: instruction.parsed.info.authority,
               destination: destination.owner,
-              amount: instruction.parsed.info.amount,
+              amount: value,
             });
           }
         }
