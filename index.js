@@ -444,6 +444,7 @@ export default class SolanaWallet {
       }
     }
     return {
+      status: !tx.meta.err,
       id: tx.transaction.signatures[0],
       to,
       amount: amount.toString(10),
