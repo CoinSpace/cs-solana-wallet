@@ -403,20 +403,19 @@ export default class SolanaWallet {
           amount: instruction.parsed.info.lamports,
         });
       }
-      if (instruction.program === 'spl-token' && ['transfer', 'transferChecked'].includes(instruction.parsed.type)) {
+      if (instruction.program === 'spl-token' && 'transfer' === instruction.parsed.type) {
         // Tokens
         const destination = postTokenBalances.find((item) => item.account === instruction.parsed.info.destination);
         if (destination && (!token || destination.mint === token)) {
-          const value = instruction.parsed.type === 'transfer'
-            ? instruction.parsed.info.amount
-            : instruction.parsed.info.tokenAmount.amount;
+          const value = instruction.parsed.info.amount;
+          const source = instruction.parsed.info.authority;
           if (destination.owner === address) {
             if (token) {
               amount = amount.plus(value);
             }
             isIncoming = true;
           }
-          if (instruction.parsed.info.authority === address) {
+          if (source === address) {
             if (token) {
               amount = amount.minus(value);
             }
@@ -424,7 +423,35 @@ export default class SolanaWallet {
           }
           if (token) {
             instructions.push({
-              source: instruction.parsed.info.authority,
+              source,
+              destination: destination.owner,
+              amount: value,
+            });
+          }
+        }
+      }
+      if (instruction.program === 'spl-token' && 'transferChecked' === instruction.parsed.type) {
+        // Tokens
+        const destination = postTokenBalances.find((item) => item.account === instruction.parsed.info.destination);
+        if (destination && (!token || destination.mint === token)) {
+          const value = instruction.parsed.info.tokenAmount.amount;
+          // eslint-disable-next-line prefer-destructuring
+          const source = instruction.parsed.info.source;
+          if (destination.owner === address) {
+            if (token) {
+              amount = amount.plus(value);
+            }
+            isIncoming = true;
+          }
+          if (source === address) {
+            if (token) {
+              amount = amount.minus(value);
+            }
+            to = destination.owner;
+          }
+          if (token) {
+            instructions.push({
+              source,
               destination: destination.owner,
               amount: value,
             });
