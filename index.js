@@ -350,7 +350,7 @@ export default class SolanaWallet {
       this.#txsCursor = transactions[transactions.length - 1].transaction.signatures[0];
     }
     return {
-      txs: await this.#transformTxs(transactions),
+      txs: (await this.#transformTxs(transactions)).filter((item) => !!item),
       hasMoreTxs: this.#hasMoreTxs,
     };
   }
@@ -465,6 +465,9 @@ export default class SolanaWallet {
           if (instruction.program === 'system' && instruction.parsed.type === 'createAccount') {
             if (instruction.parsed.info.source === address) {
               totalFee = totalFee.plus(instruction.parsed.info.lamports);
+            } else if (this.#crypto.type === 'coin') {
+              // skip from history
+              return;
             }
           }
         }
