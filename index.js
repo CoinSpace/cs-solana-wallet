@@ -553,6 +553,14 @@ export default class SolanaWallet {
     } else {
       // token
       totalFee = this.#minerFee.plus(this.#rent);
+
+      if (!totalFee.isFinite()) {
+        throw new Error('Invalid fee');
+      }
+      if (this.#balance.isLessThan(amount)) {
+        throw new Error('Insufficient funds');
+      }
+
       const mint = new web3.PublicKey(this.#crypto.address);
       const destinationAddress = await this.#getAssociatedTokenAddress(mint, toPublicKey);
       const isAccountExists = await this.#isAccountExists(destinationAddress.toBase58());
