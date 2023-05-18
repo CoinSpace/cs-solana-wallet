@@ -15,25 +15,27 @@
     "url": "https://github.com/CoinSpace/cs-solana-wallet.git"
   },
   "dependencies": {
-    "@solana/spl-token": "~0.2.0",
-    "@solana/web3.js": "~1.44.2",
-    "bignumber.js": "^9.0.2",
-    "ed25519-hd-key": "^1.2.0"
+    "@noble/curves": "^1.0.0",
+    "@scure/base": "^1.1.1",
+    "cs-common": "file:../CoinSpaceV6/cs-common",
+    "ed25519-keygen": "^0.4.1",
+    "micro-sol-signer": "^0.2.2"
   },
   "devDependencies": {
-    "eslint": "^8.10.0",
-    "eslint-config-coinspace": "^1.2.1",
-    "mocha": "^10.0.0"
+    "eslint": "^8.40.0",
+    "eslint-config-coinspace": "^2.0.0",
+    "mocha": "^10.0.0",
+    "sinon": "^15.0.4"
   },
   "eslintConfig": {
     "extends": [
       "coinspace"
     ],
     "env": {
-      "node": true
+      "node": true,
+      "browser": true
     },
     "parserOptions": {
-      "ecmaVersion": 2022,
       "requireConfigFile": false,
       "sourceType": "module"
     },
