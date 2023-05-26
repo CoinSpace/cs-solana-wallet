@@ -622,7 +622,7 @@ export default class SolanaWallet {
     if (this.#useTestNetwork) {
       return `https://explorer.solana.com/tx/${txId}?cluster=devnet`;
     } else {
-      return `https://blockchair.com/solana/transaction/${txId}?from=coinwallet`;
+      return `https://explorer.solana.com/tx/${txId}`;
     }
   }
 
