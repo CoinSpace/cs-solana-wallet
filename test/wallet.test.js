@@ -59,7 +59,7 @@ const usdcoinATsolana = {
 let defaultOptionsCoin;
 let defaultOptionsToken;
 
-describe('Cardano Wallet', () => {
+describe('Solana Wallet', () => {
   beforeEach(() => {
     defaultOptionsCoin = {
       crypto: solanaATsolana,
