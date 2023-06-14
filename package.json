@@ -15,11 +15,13 @@
     "url": "https://github.com/CoinSpace/cs-solana-wallet.git"
   },
   "dependencies": {
-    "@coinspace/cs-common": "^1.0.7",
     "@noble/curves": "^1.0.0",
     "@scure/base": "^1.1.1",
     "ed25519-keygen": "^0.4.1",
     "micro-sol-signer": "^0.3.0"
+  },
+  "peerDependencies": {
+    "@coinspace/cs-common": "^1.0.7"
   },
   "devDependencies": {
     "eslint": "^8.40.0",
