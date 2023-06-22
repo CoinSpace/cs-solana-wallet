@@ -72,7 +72,6 @@ describe('Solana Wallet', () => {
           getPrice() { return 21.45; },
         },
       },
-      apiWeb: 'web',
       apiNode: 'node',
       storage: { get() {}, set() {}, save() {} },
       txPerPage: 5,
@@ -89,7 +88,6 @@ describe('Solana Wallet', () => {
           getPrice() { return 1; },
         },
       },
-      apiWeb: 'web',
       apiNode: 'node',
       storage: { get() {}, set() {}, save() {} },
       txPerPage: 5,
@@ -355,7 +353,6 @@ describe('Solana Wallet', () => {
             method: 'GET',
             url: 'api/v4/csfee',
             params: { crypto: 'solana@solana' },
-            baseURL: 'web',
           }).resolves(CS_FEE)
           .withArgs({
             seed: 'device',
@@ -587,7 +584,6 @@ describe('Solana Wallet', () => {
           method: 'GET',
           url: 'api/v4/csfee',
           params: { crypto: 'solana@solana' },
-          baseURL: 'web',
         }).resolves(CS_FEE)
         .withArgs({
           seed: 'device',
@@ -690,7 +686,6 @@ describe('Solana Wallet', () => {
           method: 'GET',
           url: 'api/v4/csfee',
           params: { crypto: 'solana@solana' },
-          baseURL: 'web',
         }).resolves(CS_FEE)
         .withArgs({
           seed: 'device',
@@ -849,7 +844,6 @@ describe('Solana Wallet', () => {
           method: 'GET',
           url: 'api/v4/csfee',
           params: { crypto: 'solana@solana' },
-          baseURL: 'web',
         }).resolves(CS_FEE)
         .withArgs({
           seed: 'device',
