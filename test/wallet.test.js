@@ -111,6 +111,7 @@ describe('Solana Wallet', () => {
         ...defaultOptionsToken,
       });
       assert.equal(wallet.state, Wallet.STATE_CREATED);
+      assert.equal(wallet.tokenUrl, 'https://explorer.solana.com/address/4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU');
     });
   });
 
@@ -334,6 +335,15 @@ describe('Solana Wallet', () => {
         }, {
           name: 'DestinationEqualsSourceError',
           message: 'Destination address equals source address',
+        });
+      });
+
+      it('empty address', async () => {
+        await assert.rejects(async () => {
+          await wallet.validateAddress({ address: '' });
+        }, {
+          name: 'EmptyAddressError',
+          message: 'Empty address',
         });
       });
     });
