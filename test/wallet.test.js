@@ -490,6 +490,13 @@ describe('Solana Wallet', () => {
           .withArgs({
             seed: 'device',
             method: 'GET',
+            url: 'api/v1/minimumBalanceForRentExemptAccount',
+            params: { size: 0 },
+            baseURL: 'node',
+          }).resolves({ rent: 890880 })
+          .withArgs({
+            seed: 'device',
+            method: 'GET',
             url: 'api/v1/latestBlockhash',
             baseURL: 'node',
           }).resolves(LATEST_BLOCKHASH)
@@ -552,7 +559,7 @@ describe('Solana Wallet', () => {
         }, {
           name: 'InsufficientCoinForTokenTransactionError',
           message: 'Insufficient funds for token transaction',
-          amount: new Amount(5000n, wallet.platform.decimals),
+          amount: new Amount(895880n, wallet.platform.decimals),
         });
       });
 
@@ -573,7 +580,7 @@ describe('Solana Wallet', () => {
         }, {
           name: 'InsufficientCoinForTokenTransactionError',
           message: 'Insufficient funds for token transaction',
-          amount: new Amount(2009480n, wallet.platform.decimals),
+          amount: new Amount(2900360n, wallet.platform.decimals),
         });
       });
 
