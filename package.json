@@ -21,7 +21,7 @@
     "micro-sol-signer": "^0.3.0"
   },
   "peerDependencies": {
-    "@coinspace/cs-common": "^1.0.13"
+    "@coinspace/cs-common": "^1.0.18"
   },
   "devDependencies": {
     "eslint": "^8.40.0",
