@@ -861,7 +861,7 @@ describe('Solana Wallet', () => {
 
   describe('createTransaction', () => {
     it('should create valid transaction (coin)', async () => {
-      const request = sinon.stub(defaultOptionsCoin.account, 'request')
+      sinon.stub(defaultOptionsCoin.account, 'request')
         .withArgs({
           seed: 'device',
           method: 'GET',
@@ -899,31 +899,32 @@ describe('Solana Wallet', () => {
           url: 'api/v1/feeForMessage',
           data: sinon.match.any,
           baseURL: 'node',
-        }).resolves({ fee: { value: 5000 } });
+        }).resolves({ fee: { value: 5000 } })
+        .withArgs({
+          seed: 'device',
+          method: 'POST',
+          url: 'api/v1/tx/submit',
+          data: {
+            transaction: TRANSACTION,
+          },
+          baseURL: 'node',
+        }).resolves('123456');
       const wallet = new Wallet({
         ...defaultOptionsCoin,
       });
       await wallet.open(RANDOM_PUBLIC_KEY);
       await wallet.load();
 
-      await wallet.createTransaction({
+      const id = await wallet.createTransaction({
         address: DESTIONATION_ADDRESS,
         amount: new Amount(2_000000000, wallet.crypto.decimals),
       }, RANDOM_SEED);
       assert.equal(wallet.balance.value, 7_976684977n);
-      assert.equal(request.withArgs({
-        seed: 'device',
-        method: 'POST',
-        url: 'api/v1/tx/submit',
-        data: {
-          transaction: TRANSACTION,
-        },
-        baseURL: 'node',
-      }).callCount, 1);
+      assert.equal(id, '123456');
     });
 
     it('should create valid transaction (token) to new account', async () => {
-      const request = sinon.stub(defaultOptionsToken.account, 'request')
+      sinon.stub(defaultOptionsToken.account, 'request')
         .withArgs({
           seed: 'device',
           method: 'GET',
@@ -961,31 +962,32 @@ describe('Solana Wallet', () => {
           url: 'api/v1/feeForMessage',
           data: sinon.match.any,
           baseURL: 'node',
-        }).resolves({ fee: { value: 5000 } });
+        }).resolves({ fee: { value: 5000 } })
+        .withArgs({
+          seed: 'device',
+          method: 'POST',
+          url: 'api/v1/tx/submit',
+          data: {
+            transaction: TOKEN_TRANSACTION_NEW,
+          },
+          baseURL: 'node',
+        }).resolves('123456');
       const wallet = new Wallet({
         ...defaultOptionsToken,
       });
       await wallet.open(RANDOM_PUBLIC_KEY);
       await wallet.load();
 
-      await wallet.createTransaction({
+      const id = await wallet.createTransaction({
         address: DESTIONATION_ADDRESS,
         amount: new Amount(2_000000, wallet.crypto.decimals),
       }, RANDOM_SEED);
       assert.equal(wallet.balance.value, 4_000000n);
-      assert.equal(request.withArgs({
-        seed: 'device',
-        method: 'POST',
-        url: 'api/v1/tx/submit',
-        data: {
-          transaction: TOKEN_TRANSACTION_NEW,
-        },
-        baseURL: 'node',
-      }).callCount, 1);
+      assert.equal(id, '123456');
     });
 
     it('should create valid transaction (token) to existed account', async () => {
-      const request = sinon.stub(defaultOptionsToken.account, 'request')
+      sinon.stub(defaultOptionsToken.account, 'request')
         .withArgs({
           seed: 'device',
           method: 'GET',
@@ -1023,27 +1025,28 @@ describe('Solana Wallet', () => {
           url: 'api/v1/feeForMessage',
           data: sinon.match.any,
           baseURL: 'node',
-        }).resolves({ fee: { value: 5000 } });
+        }).resolves({ fee: { value: 5000 } })
+        .withArgs({
+          seed: 'device',
+          method: 'POST',
+          url: 'api/v1/tx/submit',
+          data: {
+            transaction: TOKEN_TRANSACTION_EXISTED,
+          },
+          baseURL: 'node',
+        }).resolves('123456');
       const wallet = new Wallet({
         ...defaultOptionsToken,
       });
       await wallet.open(RANDOM_PUBLIC_KEY);
       await wallet.load();
 
-      await wallet.createTransaction({
+      const id = await wallet.createTransaction({
         address: DESTIONATION_ADDRESS,
         amount: new Amount(2_000000, wallet.crypto.decimals),
       }, RANDOM_SEED);
       assert.equal(wallet.balance.value, 4_000000n);
-      assert.equal(request.withArgs({
-        seed: 'device',
-        method: 'POST',
-        url: 'api/v1/tx/submit',
-        data: {
-          transaction: TOKEN_TRANSACTION_EXISTED,
-        },
-        baseURL: 'node',
-      }).callCount, 1);
+      assert.equal(id, '123456');
     });
   });
 
