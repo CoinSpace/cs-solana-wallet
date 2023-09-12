@@ -1,6 +1,6 @@
 /* eslint-disable max-len */
 import { Amount } from '@coinspace/cs-common';
-import Wallet from '../index.js';
+import Wallet from '@coinspace/cs-solana-wallet';
 import assert from 'assert/strict';
 import fs from 'fs/promises';
 import sinon from 'sinon';
@@ -56,6 +56,8 @@ const usdcoinATsolana = {
   decimals: 6,
 };
 
+const COIN_PRICE = 21.45;
+
 let defaultOptionsCoin;
 let defaultOptionsToken;
 
@@ -66,12 +68,7 @@ describe('Solana Wallet', () => {
       platform: solanaATsolana,
       cache: { get() {}, set() {} },
       settings: {},
-      account: {
-        request(...args) { console.log(args); },
-        market: {
-          getPrice() { return 21.45; },
-        },
-      },
+      request(...args) { console.log(args); },
       apiNode: 'node',
       storage: { get() {}, set() {}, save() {} },
       txPerPage: 5,
@@ -82,12 +79,7 @@ describe('Solana Wallet', () => {
       platform: solanaATsolana,
       cache: { get() {}, set() {} },
       settings: {},
-      account: {
-        request(...args) { console.log(args); },
-        market: {
-          getPrice() { return 1; },
-        },
-      },
+      request(...args) { console.log(args); },
       apiNode: 'node',
       storage: { get() {}, set() {}, save() {} },
       txPerPage: 5,
@@ -203,7 +195,7 @@ describe('Solana Wallet', () => {
 
   describe('load', () => {
     it('should load wallet (coin)', async () => {
-      sinon.stub(defaultOptionsCoin.account, 'request')
+      sinon.stub(defaultOptionsCoin, 'request')
         .withArgs({
           seed: 'device',
           method: 'GET',
@@ -224,7 +216,7 @@ describe('Solana Wallet', () => {
     });
 
     it('should load wallet (token)', async () => {
-      sinon.stub(defaultOptionsToken.account, 'request')
+      sinon.stub(defaultOptionsToken, 'request')
         .withArgs({
           seed: 'device',
           method: 'GET',
@@ -251,11 +243,17 @@ describe('Solana Wallet', () => {
     });
 
     it('should set STATE_ERROR on error', async () => {
+      sinon.stub(defaultOptionsCoin, 'request')
+        .withArgs({
+          seed: 'device',
+          method: 'GET',
+          url: `api/v1/account/${WALLET_ADDRESS}/balance`,
+          baseURL: 'node',
+        }).rejects();
       const wallet = new Wallet({
         ...defaultOptionsCoin,
       });
       await wallet.open(RANDOM_PUBLIC_KEY);
-      sinon.stub(defaultOptionsCoin.account, 'request');
       await assert.rejects(async () => {
         await wallet.load();
       });
@@ -305,7 +303,7 @@ describe('Solana Wallet', () => {
     describe('validateAddress', () => {
       let wallet;
       beforeEach(async () => {
-        sinon.stub(defaultOptionsCoin.account, 'request')
+        sinon.stub(defaultOptionsCoin, 'request')
           .withArgs({
             seed: 'device',
             method: 'GET',
@@ -363,7 +361,7 @@ describe('Solana Wallet', () => {
     describe('validateAmount (coin)', () => {
       let wallet;
       beforeEach(async () => {
-        sinon.stub(defaultOptionsCoin.account, 'request')
+        sinon.stub(defaultOptionsCoin, 'request')
           .withArgs({
             seed: 'device',
             method: 'GET',
@@ -413,6 +411,7 @@ describe('Solana Wallet', () => {
         const valid = await wallet.validateAmount({
           address: DESTIONATION_ADDRESS,
           amount: new Amount(2_000000000n, wallet.crypto.decimals),
+          price: COIN_PRICE,
         });
         assert.ok(valid);
       });
@@ -422,6 +421,7 @@ describe('Solana Wallet', () => {
           await wallet.validateAmount({
             address: DESTIONATION_ADDRESS,
             amount: new Amount(0n, wallet.crypto.decimals),
+            price: COIN_PRICE,
           });
         }, {
           name: 'SmallAmountError',
@@ -435,6 +435,7 @@ describe('Solana Wallet', () => {
           await wallet.validateAmount({
             address: DESTIONATION_ADDRESS,
             amount: new Amount(890000, wallet.crypto.decimals),
+            price: COIN_PRICE,
           });
         }, {
           name: 'MinimumReserveDestinationError',
@@ -448,6 +449,7 @@ describe('Solana Wallet', () => {
           await wallet.validateAmount({
             address: DESTIONATION_ADDRESS,
             amount: new Amount(10_000000000n, wallet.crypto.decimals),
+            price: COIN_PRICE,
           });
         }, {
           name: 'BigAmountError',
@@ -461,7 +463,7 @@ describe('Solana Wallet', () => {
       let wallet;
       let request;
       beforeEach(async () => {
-        request = sinon.stub(defaultOptionsToken.account, 'request')
+        request = sinon.stub(defaultOptionsToken, 'request')
           .withArgs({
             seed: 'device',
             method: 'GET',
@@ -601,7 +603,7 @@ describe('Solana Wallet', () => {
 
   describe('estimateMaxAmount', () => {
     it('should correct estimate max amount (coin)', async () => {
-      sinon.stub(defaultOptionsCoin.account, 'request')
+      sinon.stub(defaultOptionsCoin, 'request')
         .withArgs({
           seed: 'device',
           method: 'GET',
@@ -646,12 +648,15 @@ describe('Solana Wallet', () => {
       await wallet.open(RANDOM_PUBLIC_KEY);
       await wallet.load();
 
-      const maxAmount = await wallet.estimateMaxAmount({ address: DESTIONATION_ADDRESS });
+      const maxAmount = await wallet.estimateMaxAmount({
+        address: DESTIONATION_ADDRESS,
+        price: COIN_PRICE,
+      });
       assert.equal(maxAmount.value, 9_950243782n);
     });
 
     it('should correct estimate max amount (token)', async () => {
-      sinon.stub(defaultOptionsToken.account, 'request')
+      sinon.stub(defaultOptionsToken, 'request')
         .withArgs({
           seed: 'device',
           method: 'GET',
@@ -703,7 +708,7 @@ describe('Solana Wallet', () => {
 
   describe('estimateTransactionFee', () => {
     it('should estimate transaction fee (coin)', async () => {
-      sinon.stub(defaultOptionsCoin.account, 'request')
+      sinon.stub(defaultOptionsCoin, 'request')
         .withArgs({
           seed: 'device',
           method: 'GET',
@@ -750,12 +755,13 @@ describe('Solana Wallet', () => {
       const fee = await wallet.estimateTransactionFee({
         address: DESTIONATION_ADDRESS,
         amount: new Amount(2_000000000n, wallet.crypto.decimals),
+        price: COIN_PRICE,
       });
       assert.deepEqual(fee, new Amount(23315023n, wallet.crypto.decimals));
     });
 
     it('should estimate transaction fee (token) to new account', async () => {
-      sinon.stub(defaultOptionsToken.account, 'request')
+      sinon.stub(defaultOptionsToken, 'request')
         .withArgs({
           seed: 'device',
           method: 'GET',
@@ -807,7 +813,7 @@ describe('Solana Wallet', () => {
     });
 
     it('should estimate transaction fee (token) to existed account', async () => {
-      sinon.stub(defaultOptionsToken.account, 'request')
+      sinon.stub(defaultOptionsToken, 'request')
         .withArgs({
           seed: 'device',
           method: 'GET',
@@ -861,7 +867,7 @@ describe('Solana Wallet', () => {
 
   describe('createTransaction', () => {
     it('should create valid transaction (coin)', async () => {
-      sinon.stub(defaultOptionsCoin.account, 'request')
+      sinon.stub(defaultOptionsCoin, 'request')
         .withArgs({
           seed: 'device',
           method: 'GET',
@@ -918,13 +924,14 @@ describe('Solana Wallet', () => {
       const id = await wallet.createTransaction({
         address: DESTIONATION_ADDRESS,
         amount: new Amount(2_000000000, wallet.crypto.decimals),
+        price: COIN_PRICE,
       }, RANDOM_SEED);
       assert.equal(wallet.balance.value, 7_976684977n);
       assert.equal(id, '123456');
     });
 
     it('should create valid transaction (token) to new account', async () => {
-      sinon.stub(defaultOptionsToken.account, 'request')
+      sinon.stub(defaultOptionsToken, 'request')
         .withArgs({
           seed: 'device',
           method: 'GET',
@@ -987,7 +994,7 @@ describe('Solana Wallet', () => {
     });
 
     it('should create valid transaction (token) to existed account', async () => {
-      sinon.stub(defaultOptionsToken.account, 'request')
+      sinon.stub(defaultOptionsToken, 'request')
         .withArgs({
           seed: 'device',
           method: 'GET',
@@ -1052,7 +1059,7 @@ describe('Solana Wallet', () => {
 
   describe('loadTransactions', () => {
     it('should load transactions (coin)', async () => {
-      sinon.stub(defaultOptionsCoin.account, 'request')
+      sinon.stub(defaultOptionsCoin, 'request')
         .withArgs({
           seed: 'device',
           method: 'GET',
@@ -1079,7 +1086,7 @@ describe('Solana Wallet', () => {
     });
 
     it('should load transactions (token)', async () => {
-      sinon.stub(defaultOptionsToken.account, 'request')
+      sinon.stub(defaultOptionsToken, 'request')
         .withArgs({
           seed: 'device',
           method: 'GET',
