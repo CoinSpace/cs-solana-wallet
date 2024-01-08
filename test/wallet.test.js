@@ -171,6 +171,31 @@ describe('Solana Wallet', () => {
     });
   });
 
+  describe('validateDerivationPath', () => {
+    let wallet;
+    beforeEach(async () => {
+      wallet = new Wallet({
+        ...defaultOptionsCoin,
+      });
+      await wallet.open(RANDOM_PUBLIC_KEY);
+    });
+
+    it('should validate (correct path)', () => {
+      const valid = wallet.validateDerivationPath("m/44'/501'/0'/0'");
+      assert.equal(valid, true);
+    });
+
+    it('should validate (incorrect path 1)', () => {
+      const valid = wallet.validateDerivationPath("m/44'/501'/0'/0");
+      assert.equal(valid, false);
+    });
+
+    it('should validate (incorrect path 2)', () => {
+      const valid = wallet.validateDerivationPath("44'/501'/0'/0'");
+      assert.equal(valid, false);
+    });
+  });
+
   describe('storage', () => {
     it('should load initial balance from storage (coin)', async () => {
       sinon.stub(defaultOptionsCoin.storage, 'get')
@@ -201,6 +226,7 @@ describe('Solana Wallet', () => {
           method: 'GET',
           url: `api/v1/account/${WALLET_ADDRESS}/balance`,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ balance: 504000000 });
       const storage = sinon.mock(defaultOptionsCoin.storage);
       storage.expects('set').once().withArgs('balance', '504000000');
@@ -222,12 +248,14 @@ describe('Solana Wallet', () => {
           method: 'GET',
           url: `api/v1/account/${WALLET_ADDRESS}/balance`,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ balance: 504000000 })
         .withArgs({
           seed: 'device',
           method: 'GET',
           url: `api/v1/account/${TOKEN_ACCOUNT}/tokenbalance`,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ balance: 6_000000 });
       const storage = sinon.mock(defaultOptionsToken.storage);
       storage.expects('set').once().withArgs('balance', '6000000');
@@ -249,6 +277,7 @@ describe('Solana Wallet', () => {
           method: 'GET',
           url: `api/v1/account/${WALLET_ADDRESS}/balance`,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).rejects();
       const wallet = new Wallet({
         ...defaultOptionsCoin,
@@ -309,6 +338,7 @@ describe('Solana Wallet', () => {
             method: 'GET',
             url: `api/v1/account/${WALLET_ADDRESS}/balance`,
             baseURL: 'node',
+            headers: sinon.match.object,
           }).resolves({ balance: 504000000 });
         wallet = new Wallet({
           ...defaultOptionsCoin,
@@ -367,6 +397,7 @@ describe('Solana Wallet', () => {
             method: 'GET',
             url: `api/v1/account/${WALLET_ADDRESS}/balance`,
             baseURL: 'node',
+            headers: sinon.match.object,
           }).resolves({ balance: 10_000000000 })
           .withArgs({
             seed: 'device',
@@ -379,6 +410,7 @@ describe('Solana Wallet', () => {
             method: 'GET',
             url: `api/v1/account/${DESTIONATION_ADDRESS}/info`,
             baseURL: 'node',
+            headers: sinon.match.object,
           }).resolves({ })
           .withArgs({
             seed: 'device',
@@ -386,12 +418,14 @@ describe('Solana Wallet', () => {
             url: 'api/v1/minimumBalanceForRentExemptAccount',
             params: { size: 0 },
             baseURL: 'node',
+            headers: sinon.match.object,
           }).resolves({ rent: 890880 })
           .withArgs({
             seed: 'device',
             method: 'GET',
             url: 'api/v1/latestBlockhash',
             baseURL: 'node',
+            headers: sinon.match.object,
           }).resolves(LATEST_BLOCKHASH)
           .withArgs({
             seed: 'device',
@@ -399,6 +433,7 @@ describe('Solana Wallet', () => {
             url: 'api/v1/feeForMessage',
             data: sinon.match.any,
             baseURL: 'node',
+            headers: sinon.match.object,
           }).resolves({ fee: { value: 5000 } });
         wallet = new Wallet({
           ...defaultOptionsCoin,
@@ -469,18 +504,21 @@ describe('Solana Wallet', () => {
             method: 'GET',
             url: `api/v1/account/${WALLET_ADDRESS}/balance`,
             baseURL: 'node',
+            headers: sinon.match.object,
           }).resolves({ balance: 10_000000000 })
           .withArgs({
             seed: 'device',
             method: 'GET',
             url: `api/v1/account/${TOKEN_ACCOUNT}/tokenbalance`,
             baseURL: 'node',
+            headers: sinon.match.object,
           }).resolves({ balance: 6_000000 })
           .withArgs({
             seed: 'device',
             method: 'GET',
             url: `api/v1/account/${DESTIONATION_TOKEN_ACCCOUNT}/info`,
             baseURL: 'node',
+            headers: sinon.match.object,
           }).resolves({ })
           .withArgs({
             seed: 'device',
@@ -488,6 +526,7 @@ describe('Solana Wallet', () => {
             url: 'api/v1/minimumBalanceForRentExemptAccount',
             params: { size: 165 },
             baseURL: 'node',
+            headers: sinon.match.object,
           }).resolves({ rent: 2004480 })
           .withArgs({
             seed: 'device',
@@ -495,12 +534,14 @@ describe('Solana Wallet', () => {
             url: 'api/v1/minimumBalanceForRentExemptAccount',
             params: { size: 0 },
             baseURL: 'node',
+            headers: sinon.match.object,
           }).resolves({ rent: 890880 })
           .withArgs({
             seed: 'device',
             method: 'GET',
             url: 'api/v1/latestBlockhash',
             baseURL: 'node',
+            headers: sinon.match.object,
           }).resolves(LATEST_BLOCKHASH)
           .withArgs({
             seed: 'device',
@@ -508,6 +549,7 @@ describe('Solana Wallet', () => {
             url: 'api/v1/feeForMessage',
             data: sinon.match.any,
             baseURL: 'node',
+            headers: sinon.match.object,
           }).resolves({ fee: { value: 5000 } });
         wallet = new Wallet({
           ...defaultOptionsToken,
@@ -544,12 +586,14 @@ describe('Solana Wallet', () => {
             method: 'GET',
             url: `api/v1/account/${DESTIONATION_TOKEN_ACCCOUNT}/info`,
             baseURL: 'node',
+            headers: sinon.match.object,
           }).resolves({ data: {} })
           .withArgs({
             seed: 'device',
             method: 'GET',
             url: `api/v1/account/${WALLET_ADDRESS}/balance`,
             baseURL: 'node',
+            headers: sinon.match.object,
           }).resolves({ balance: 0 });
         await wallet.load();
 
@@ -571,6 +615,7 @@ describe('Solana Wallet', () => {
           method: 'GET',
           url: `api/v1/account/${WALLET_ADDRESS}/balance`,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ balance: 5000 });
         await wallet.load();
 
@@ -609,6 +654,7 @@ describe('Solana Wallet', () => {
           method: 'GET',
           url: `api/v1/account/${WALLET_ADDRESS}/balance`,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ balance: 10_000000000 })
         .withArgs({
           seed: 'device',
@@ -621,6 +667,7 @@ describe('Solana Wallet', () => {
           method: 'GET',
           url: `api/v1/account/${DESTIONATION_ADDRESS}/info`,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ })
         .withArgs({
           seed: 'device',
@@ -628,12 +675,14 @@ describe('Solana Wallet', () => {
           url: 'api/v1/minimumBalanceForRentExemptAccount',
           params: { size: 0 },
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ rent: 890880 })
         .withArgs({
           seed: 'device',
           method: 'GET',
           url: 'api/v1/latestBlockhash',
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves(LATEST_BLOCKHASH)
         .withArgs({
           seed: 'device',
@@ -641,6 +690,7 @@ describe('Solana Wallet', () => {
           url: 'api/v1/feeForMessage',
           data: sinon.match.any,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ fee: { value: 5000 } });
       const wallet = new Wallet({
         ...defaultOptionsCoin,
@@ -662,18 +712,21 @@ describe('Solana Wallet', () => {
           method: 'GET',
           url: `api/v1/account/${WALLET_ADDRESS}/balance`,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ balance: 10_000000000 })
         .withArgs({
           seed: 'device',
           method: 'GET',
           url: `api/v1/account/${TOKEN_ACCOUNT}/tokenbalance`,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ balance: 6_000000 })
         .withArgs({
           seed: 'device',
           method: 'GET',
           url: `api/v1/account/${DESTIONATION_TOKEN_ACCCOUNT}/info`,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ })
         .withArgs({
           seed: 'device',
@@ -681,12 +734,14 @@ describe('Solana Wallet', () => {
           url: 'api/v1/minimumBalanceForRentExemptAccount',
           params: { size: 165 },
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ rent: 2004480 })
         .withArgs({
           seed: 'device',
           method: 'GET',
           url: 'api/v1/latestBlockhash',
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves(LATEST_BLOCKHASH)
         .withArgs({
           seed: 'device',
@@ -694,6 +749,7 @@ describe('Solana Wallet', () => {
           url: 'api/v1/feeForMessage',
           data: sinon.match.any,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ fee: { value: 5000 } });
       const wallet = new Wallet({
         ...defaultOptionsToken,
@@ -714,6 +770,7 @@ describe('Solana Wallet', () => {
           method: 'GET',
           url: `api/v1/account/${WALLET_ADDRESS}/balance`,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ balance: 10_000000000 })
         .withArgs({
           seed: 'device',
@@ -726,6 +783,7 @@ describe('Solana Wallet', () => {
           method: 'GET',
           url: `api/v1/account/${DESTIONATION_ADDRESS}/info`,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ })
         .withArgs({
           seed: 'device',
@@ -733,12 +791,14 @@ describe('Solana Wallet', () => {
           url: 'api/v1/minimumBalanceForRentExemptAccount',
           params: { size: 0 },
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ rent: 890880 })
         .withArgs({
           seed: 'device',
           method: 'GET',
           url: 'api/v1/latestBlockhash',
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves(LATEST_BLOCKHASH)
         .withArgs({
           seed: 'device',
@@ -746,6 +806,7 @@ describe('Solana Wallet', () => {
           url: 'api/v1/feeForMessage',
           data: sinon.match.any,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ fee: { value: 5000 } });
       const wallet = new Wallet({
         ...defaultOptionsCoin,
@@ -767,18 +828,21 @@ describe('Solana Wallet', () => {
           method: 'GET',
           url: `api/v1/account/${WALLET_ADDRESS}/balance`,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ balance: 10_000000000 })
         .withArgs({
           seed: 'device',
           method: 'GET',
           url: `api/v1/account/${TOKEN_ACCOUNT}/tokenbalance`,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ balance: 6_000000 })
         .withArgs({
           seed: 'device',
           method: 'GET',
           url: `api/v1/account/${DESTIONATION_TOKEN_ACCCOUNT}/info`,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ })
         .withArgs({
           seed: 'device',
@@ -786,12 +850,14 @@ describe('Solana Wallet', () => {
           url: 'api/v1/minimumBalanceForRentExemptAccount',
           params: { size: 165 },
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ rent: 2004480 })
         .withArgs({
           seed: 'device',
           method: 'GET',
           url: 'api/v1/latestBlockhash',
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves(LATEST_BLOCKHASH)
         .withArgs({
           seed: 'device',
@@ -799,6 +865,7 @@ describe('Solana Wallet', () => {
           url: 'api/v1/feeForMessage',
           data: sinon.match.any,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ fee: { value: 5000 } });
       const wallet = new Wallet({
         ...defaultOptionsToken,
@@ -819,18 +886,21 @@ describe('Solana Wallet', () => {
           method: 'GET',
           url: `api/v1/account/${WALLET_ADDRESS}/balance`,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ balance: 10_000000000 })
         .withArgs({
           seed: 'device',
           method: 'GET',
           url: `api/v1/account/${TOKEN_ACCOUNT}/tokenbalance`,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ balance: 6_000000 })
         .withArgs({
           seed: 'device',
           method: 'GET',
           url: `api/v1/account/${DESTIONATION_TOKEN_ACCCOUNT}/info`,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ data: {} })
         .withArgs({
           seed: 'device',
@@ -838,12 +908,14 @@ describe('Solana Wallet', () => {
           url: 'api/v1/minimumBalanceForRentExemptAccount',
           params: { size: 165 },
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ rent: 2004480 })
         .withArgs({
           seed: 'device',
           method: 'GET',
           url: 'api/v1/latestBlockhash',
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves(LATEST_BLOCKHASH)
         .withArgs({
           seed: 'device',
@@ -851,6 +923,7 @@ describe('Solana Wallet', () => {
           url: 'api/v1/feeForMessage',
           data: sinon.match.any,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ fee: { value: 5000 } });
       const wallet = new Wallet({
         ...defaultOptionsToken,
@@ -873,6 +946,7 @@ describe('Solana Wallet', () => {
           method: 'GET',
           url: `api/v1/account/${WALLET_ADDRESS}/balance`,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ balance: 10_000000000 })
         .withArgs({
           seed: 'device',
@@ -885,6 +959,7 @@ describe('Solana Wallet', () => {
           method: 'GET',
           url: `api/v1/account/${DESTIONATION_ADDRESS}/info`,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ })
         .withArgs({
           seed: 'device',
@@ -892,12 +967,14 @@ describe('Solana Wallet', () => {
           url: 'api/v1/minimumBalanceForRentExemptAccount',
           params: { size: 0 },
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ rent: 890880 })
         .withArgs({
           seed: 'device',
           method: 'GET',
           url: 'api/v1/latestBlockhash',
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves(LATEST_BLOCKHASH)
         .withArgs({
           seed: 'device',
@@ -905,6 +982,7 @@ describe('Solana Wallet', () => {
           url: 'api/v1/feeForMessage',
           data: sinon.match.any,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ fee: { value: 5000 } })
         .withArgs({
           seed: 'device',
@@ -914,6 +992,7 @@ describe('Solana Wallet', () => {
             transaction: TRANSACTION,
           },
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves('123456');
       const wallet = new Wallet({
         ...defaultOptionsCoin,
@@ -937,18 +1016,21 @@ describe('Solana Wallet', () => {
           method: 'GET',
           url: `api/v1/account/${WALLET_ADDRESS}/balance`,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ balance: 10_000000000 })
         .withArgs({
           seed: 'device',
           method: 'GET',
           url: `api/v1/account/${TOKEN_ACCOUNT}/tokenbalance`,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ balance: 6_000000 })
         .withArgs({
           seed: 'device',
           method: 'GET',
           url: `api/v1/account/${DESTIONATION_TOKEN_ACCCOUNT}/info`,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ })
         .withArgs({
           seed: 'device',
@@ -956,12 +1038,14 @@ describe('Solana Wallet', () => {
           url: 'api/v1/minimumBalanceForRentExemptAccount',
           params: { size: 165 },
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ rent: 2004480 })
         .withArgs({
           seed: 'device',
           method: 'GET',
           url: 'api/v1/latestBlockhash',
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves(LATEST_BLOCKHASH)
         .withArgs({
           seed: 'device',
@@ -969,6 +1053,7 @@ describe('Solana Wallet', () => {
           url: 'api/v1/feeForMessage',
           data: sinon.match.any,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ fee: { value: 5000 } })
         .withArgs({
           seed: 'device',
@@ -978,6 +1063,7 @@ describe('Solana Wallet', () => {
             transaction: TOKEN_TRANSACTION_NEW,
           },
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves('123456');
       const wallet = new Wallet({
         ...defaultOptionsToken,
@@ -1000,18 +1086,21 @@ describe('Solana Wallet', () => {
           method: 'GET',
           url: `api/v1/account/${WALLET_ADDRESS}/balance`,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ balance: 10_000000000 })
         .withArgs({
           seed: 'device',
           method: 'GET',
           url: `api/v1/account/${TOKEN_ACCOUNT}/tokenbalance`,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ balance: 6_000000 })
         .withArgs({
           seed: 'device',
           method: 'GET',
           url: `api/v1/account/${DESTIONATION_TOKEN_ACCCOUNT}/info`,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ data: {} })
         .withArgs({
           seed: 'device',
@@ -1019,12 +1108,14 @@ describe('Solana Wallet', () => {
           url: 'api/v1/minimumBalanceForRentExemptAccount',
           params: { size: 165 },
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ rent: 2004480 })
         .withArgs({
           seed: 'device',
           method: 'GET',
           url: 'api/v1/latestBlockhash',
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves(LATEST_BLOCKHASH)
         .withArgs({
           seed: 'device',
@@ -1032,6 +1123,7 @@ describe('Solana Wallet', () => {
           url: 'api/v1/feeForMessage',
           data: sinon.match.any,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ fee: { value: 5000 } })
         .withArgs({
           seed: 'device',
@@ -1041,6 +1133,7 @@ describe('Solana Wallet', () => {
             transaction: TOKEN_TRANSACTION_EXISTED,
           },
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves('123456');
       const wallet = new Wallet({
         ...defaultOptionsToken,
@@ -1065,6 +1158,7 @@ describe('Solana Wallet', () => {
           method: 'GET',
           url: `api/v1/account/${WALLET_ADDRESS}/balance`,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ balance: 10_000000000 })
         .withArgs({
           seed: 'device',
@@ -1072,6 +1166,7 @@ describe('Solana Wallet', () => {
           url: `api/v1/account/${WALLET_ADDRESS}/transactions`,
           params: sinon.match.object,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves(TRANSACTIONS);
       const wallet = new Wallet({
         ...defaultOptionsCoin,
@@ -1092,12 +1187,14 @@ describe('Solana Wallet', () => {
           method: 'GET',
           url: `api/v1/account/${WALLET_ADDRESS}/balance`,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ balance: 10_000000000 })
         .withArgs({
           seed: 'device',
           method: 'GET',
           url: `api/v1/account/${TOKEN_ACCOUNT}/tokenbalance`,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves({ balance: 6_000000 })
         .withArgs({
           seed: 'device',
@@ -1105,6 +1202,7 @@ describe('Solana Wallet', () => {
           url: `api/v1/account/${TOKEN_ACCOUNT}/transactions`,
           params: sinon.match.object,
           baseURL: 'node',
+          headers: sinon.match.object,
         }).resolves(TOKEN_TRANSACTIONS);
       const wallet = new Wallet({
         ...defaultOptionsToken,

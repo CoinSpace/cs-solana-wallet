@@ -11,7 +11,7 @@
   },
   "scripts": {
     "test": "mocha",
-    "lint": "eslint index.js lib/*.js test/*.js"
+    "lint": "eslint . --ext .js --report-unused-disable-directives"
   },
   "repository": {
     "type": "git",
@@ -24,11 +24,11 @@
     "micro-sol-signer": "^0.3.0"
   },
   "peerDependencies": {
-    "@coinspace/cs-common": "^1.1.0"
+    "@coinspace/cs-common": "^1.1.2"
   },
   "devDependencies": {
-    "eslint": "^8.40.0",
-    "eslint-config-coinspace": "^2.0.0",
+    "eslint": "^8.56.0",
+    "eslint-config-coinspace": "^2.1.2",
     "mocha": "^10.0.0",
     "sinon": "^15.0.4"
   },
