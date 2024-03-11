@@ -1,8 +1,8 @@
 {
   "name": "@coinspace/cs-solana-wallet",
   "version": "2.0.1",
-  "description": "Solana Wallet for Coin app",
-  "author": "Coin Crypto Wallet <support@coin.space> (https://coin.space/)",
+  "description": "Solana Wallet for Coin Wallet",
+  "author": "Coin Wallet <support@coin.space> (https://coin.space/)",
   "license": "MIT",
   "main": "./index.js",
   "type": "module",
@@ -21,7 +21,7 @@
     "@noble/curves": "^1.0.0",
     "@scure/base": "^1.1.1",
     "ed25519-keygen": "^0.4.1",
-    "micro-sol-signer": "^0.3.0"
+    "micro-sol-signer": "^0.4.0"
   },
   "peerDependencies": {
     "@coinspace/cs-common": "^1.1.2"
@@ -30,7 +30,7 @@
     "eslint": "^8.56.0",
     "eslint-config-coinspace": "^2.1.2",
     "mocha": "^10.0.0",
-    "sinon": "^15.0.4"
+    "sinon": "^17.0.0"
   },
   "eslintConfig": {
     "extends": [
