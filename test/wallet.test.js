@@ -50,10 +50,22 @@ const usdcoinATsolana = {
   _id: 'usd-coin@solana',
   platform: 'solana',
   type: 'token',
-  address: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
   name: 'USD Coin',
   symbol: 'USDC',
+  address: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
   decimals: 6,
+};
+
+const yearnFinanceATsolana = {
+  _id: 'yearn-finance@solana',
+  asset: 'yearn-finance',
+  platform: 'solana',
+  type: 'token',
+  name: 'yearn.finance',
+  symbol: 'YFI',
+  // off-curve public keys
+  address: 'BXZX2JRJFjvKazM1ibeDFxgAngKExb74MRXzXKvgikxX',
+  decimals: 8,
 };
 
 const COIN_PRICE = 21.45;
@@ -262,6 +274,36 @@ describe('Solana Wallet', () => {
       storage.expects('save').once();
       const wallet = new Wallet({
         ...defaultOptionsToken,
+      });
+      await wallet.open(RANDOM_PUBLIC_KEY);
+      await wallet.load();
+      assert.equal(wallet.state, Wallet.STATE_LOADED);
+      assert.equal(wallet.balance.value, 6000000n);
+      storage.verify();
+    });
+
+    it('should load wallet (off-curve token)', async () => {
+      sinon.stub(defaultOptionsToken, 'request')
+        .withArgs({
+          seed: 'device',
+          method: 'GET',
+          url: `api/v1/account/${WALLET_ADDRESS}/balance`,
+          baseURL: 'node',
+          headers: sinon.match.object,
+        }).resolves({ balance: 504000000 })
+        .withArgs({
+          seed: 'device',
+          method: 'GET',
+          url: 'api/v1/account/8Lu2X1RXhEsfokC5a2QzBD4Se7EHf9rQ3EuXk5yFbjb/tokenbalance',
+          baseURL: 'node',
+          headers: sinon.match.object,
+        }).resolves({ balance: 6_000000 });
+      const storage = sinon.mock(defaultOptionsToken.storage);
+      storage.expects('set').once().withArgs('balance', '6000000');
+      storage.expects('save').once();
+      const wallet = new Wallet({
+        ...defaultOptionsToken,
+        crypto: yearnFinanceATsolana,
       });
       await wallet.open(RANDOM_PUBLIC_KEY);
       await wallet.load();
