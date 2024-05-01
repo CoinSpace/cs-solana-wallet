@@ -148,7 +148,7 @@
     }, {
       "accountIndex": 2,
       "mint": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
-      "owner": "CfU67ZPpEXS3ZLAjXw9BgZZCTBJTagpzwKTUarBG4r7J",
+      "owner": "7DyZQw3iV5zhHssnNA6Nopi5zc8NGLbYjHMcaok6NN66",
       "uiTokenAmount": {
         "amount": "1945194",
         "decimals": 6,
@@ -160,7 +160,7 @@
     "preTokenBalances": [{
       "accountIndex": 2,
       "mint": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
-      "owner": "CfU67ZPpEXS3ZLAjXw9BgZZCTBJTagpzwKTUarBG4r7J",
+      "owner": "7DyZQw3iV5zhHssnNA6Nopi5zc8NGLbYjHMcaok6NN66",
       "uiTokenAmount": {
         "amount": "1995194",
         "decimals": 6,
