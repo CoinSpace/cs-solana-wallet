@@ -645,8 +645,8 @@ describe('Solana Wallet', () => {
             amount: new Amount(2_000000n, wallet.crypto.decimals),
           });
         }, {
-          name: 'InsufficientCoinForTokenTransactionError',
-          message: 'Insufficient funds for token transaction',
+          name: 'InsufficientCoinForTransactionFeeError',
+          message: 'Insufficient funds to pay the transaction fee',
           amount: new Amount(895880n, wallet.platform.decimals),
         });
       });
@@ -667,8 +667,8 @@ describe('Solana Wallet', () => {
             amount: new Amount(2_000000n, wallet.crypto.decimals),
           });
         }, {
-          name: 'InsufficientCoinForTokenTransactionError',
-          message: 'Insufficient funds for token transaction',
+          name: 'InsufficientCoinForTransactionFeeError',
+          message: 'Insufficient funds to pay the transaction fee',
           amount: new Amount(2900360n, wallet.platform.decimals),
         });
       });
