@@ -18,10 +18,10 @@
     "url": "https://github.com/CoinSpace/cs-solana-wallet.git"
   },
   "dependencies": {
-    "@noble/curves": "^1.0.0",
-    "@scure/base": "^1.1.1",
-    "ed25519-keygen": "^0.4.1",
-    "micro-sol-signer": "^0.4.0"
+    "@noble/curves": "^1.6.0",
+    "@scure/base": "^1.1.9",
+    "micro-key-producer": "^0.7.1",
+    "micro-sol-signer": "^0.4.2"
   },
   "peerDependencies": {
     "@coinspace/cs-common": "^1.1.4"
@@ -30,7 +30,7 @@
     "eslint": "^8.56.0",
     "eslint-config-coinspace": "^2.1.2",
     "mocha": "^10.0.0",
-    "sinon": "^17.0.0"
+    "sinon": "^19.0.0"
   },
   "eslintConfig": {
     "extends": [
