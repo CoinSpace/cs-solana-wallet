@@ -1,9 +1,10 @@
 /* eslint-disable max-len */
-import { Amount } from '@coinspace/cs-common';
-import Wallet from '@coinspace/cs-solana-wallet';
 import assert from 'assert/strict';
 import fs from 'fs/promises';
 import sinon from 'sinon';
+
+import { Amount } from '@coinspace/cs-common';
+import Wallet, { SolanaTransaction } from '@coinspace/cs-solana-wallet';
 
 // either dismiss upset disease clump hazard paddle twist fetch tissue hello buyer
 const RANDOM_SEED = Buffer.from('3e818cec5efc7505369fae3f162af61130b673fa9b40e5955d5cde22a85afa03748d074356a281a5fc1dbd0b721357c56095a54de8d4bc6ecaa288f300776ae4', 'hex');
@@ -83,7 +84,7 @@ describe('Solana Wallet', () => {
       request(...args) { console.log(args); },
       apiNode: 'node',
       storage: { get() {}, set() {}, save() {} },
-      txPerPage: 5,
+      txPerPage: 10,
     };
 
     defaultOptionsToken = {
@@ -94,7 +95,7 @@ describe('Solana Wallet', () => {
       request(...args) { console.log(args); },
       apiNode: 'node',
       storage: { get() {}, set() {}, save() {} },
-      txPerPage: 5,
+      txPerPage: 10,
     };
   });
 
@@ -1218,8 +1219,10 @@ describe('Solana Wallet', () => {
 
       const res = await wallet.loadTransactions();
       assert.strictEqual(res.hasMore, false);
-      assert.strictEqual(res.transactions.length, 2);
-      assert.strictEqual(res.cursor, 'mwdbfJadLpzwcDY9ZmBkhMXd2vcxN5cJD5wq4infnHRVps9YBBtMzUQuCNy6MUgnpXp3dhQphRz3yJ3BwAN3PAZ');
+      assert.strictEqual(res.transactions.length, 5);
+      assert.strictEqual(res.transactions[0].action, SolanaTransaction.ACTION_TOKEN_TRANSFER);
+      assert.strictEqual(res.transactions[4].action, SolanaTransaction.ACTION_TRANSFER);
+      assert.strictEqual(res.cursor, '4yS6vNUdCXfvuvHWCj19EgZXDTNmeBsh54AYZgRi4dz9MaXi3vhh1H9mTfHiBTvmwPpFnEn1i1yqZ8to76NvyJdA');
     });
 
     it('should load transactions (token)', async () => {

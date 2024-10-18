@@ -1,1 +1,1 @@
-export { default } from './lib/SolanaWallet.js';
+export { default, SolanaTransaction } from './lib/SolanaWallet.js';
