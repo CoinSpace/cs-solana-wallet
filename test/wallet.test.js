@@ -118,6 +118,11 @@ describe('Solana Wallet', () => {
       assert.equal(wallet.state, Wallet.STATE_CREATED);
       assert.equal(wallet.tokenUrl, 'https://explorer.solana.com/address/4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU');
     });
+
+    it('wallet should have tokenUrl static method', () => {
+      const url = Wallet.tokenUrl('solana', '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU', false);
+      assert.equal(url, 'https://explorer.solana.com/address/4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU');
+    });
   });
 
   describe('create wallet', () => {
