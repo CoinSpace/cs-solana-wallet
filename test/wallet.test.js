@@ -1,13 +1,14 @@
 /* eslint-disable max-len */
 import assert from 'assert/strict';
 import fs from 'fs/promises';
+import { hex } from '@scure/base';
 import sinon from 'sinon';
 
 import { Amount } from '@coinspace/cs-common';
 import Wallet, { SolanaTransaction } from '@coinspace/cs-solana-wallet';
 
 // either dismiss upset disease clump hazard paddle twist fetch tissue hello buyer
-const RANDOM_SEED = Buffer.from('3e818cec5efc7505369fae3f162af61130b673fa9b40e5955d5cde22a85afa03748d074356a281a5fc1dbd0b721357c56095a54de8d4bc6ecaa288f300776ae4', 'hex');
+const RANDOM_SEED = hex.decode('3e818cec5efc7505369fae3f162af61130b673fa9b40e5955d5cde22a85afa03748d074356a281a5fc1dbd0b721357c56095a54de8d4bc6ecaa288f300776ae4');
 const RANDOM_PUBLIC_KEY = {
   settings: {
     bip44: "m/44'/501'/0'/0'",
