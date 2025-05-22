@@ -3,6 +3,7 @@ import assert from 'assert/strict';
 import fs from 'fs/promises';
 import { hex } from '@scure/base';
 import sinon from 'sinon';
+import { TOKEN_PROGRAM, TOKEN_PROGRAM2022 } from 'micro-sol-signer';
 
 import { Amount } from '@coinspace/cs-common';
 import Wallet, { SolanaTransaction } from '@coinspace/cs-solana-wallet';
@@ -18,8 +19,10 @@ const RANDOM_PUBLIC_KEY = {
 
 const WALLET_ADDRESS = 'CwKWYm4nepcBV7T3dYMfP5sTu6iVVZTsAF6RxmJn1Wjc';
 const TOKEN_ACCOUNT = '3MWaiVQUExbKDVtYNSEDuCaSiT1YM4QKbzRFaQ9jUchy';
+const TOKEN2022_ACCOUNT = '1uU8ZTN4U5obgukLUMQEKTbnUdvqvuae1zhBZrK5rZx';
 const DESTIONATION_ADDRESS = 'Cm5nzKF7zw8VZTCxYrF9nzzGtWCH3bqjUAYh1tJgUAQW';
 const DESTIONATION_TOKEN_ACCCOUNT = 'D1ZtyLeohj9us86nfFVDRQrsiyBgKdR9FeYQsz7p7pE1';
+const DESTIONATION_TOKEN2022_ACCCOUNT = 'CqdJv6KPecqvHSXEMqkJbuc32CLHRs9rwZLy4SarPmYP';
 const CS_FEE_ADDRESS = '99znZjNvScoKn8WB3eQ96b2xq6umdnECWAZDzzyHDWHx';
 const CS_FEE = {
   address: CS_FEE_ADDRESS,
@@ -34,9 +37,12 @@ const LATEST_BLOCKHASH = {
 
 const TRANSACTION = 'AYZeUCpgFmzuE+DIAOGjVAB9FGOWhwW1MM3nPVoMc6IHM44vCC1Fgj5fB9QEBtARjNKEQ+rYHYXWPvFxTx3G+gYBAAEEsVrZO/4XZlvG4lFSb4GrQsXPrig2XzkVApjyuR3J8Kuuu4f4qyBr5Cqs6GK0Y+r5TZzWaPW3sc44nH0mAj9zn3krevJXDYJ0oZXMzySrXoVJaDGIKUfaWxZz5+YL4WmLAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB5Fl/fsBGAzCXShEw9JEnNSdWvm36VcMJehe3qYld8nQIDAgABDAIAAAAAlDV3AAAAAAMCAAIMAgAAAMeuYwEAAAAA';
 const TOKEN_TRANSACTION_NEW = 'AfjZJK7d2S22p2CiENdSLhrt6U+g1IEiMoXJOrRNLrF2qwfJ8Pg+2pZERtab/UMMbMZvhDmtecifZ9Uhrv35bwgBAAUIsVrZO/4XZlvG4lFSb4GrQsXPrig2XzkVApjyuR3J8KuycXBVsB0BSTKONTBLDOgVvlm36zscL72AiprKgaHDbiL4cA4g5i7eMrL4nVzQtczZ75qual7Kz5T1wA2+xwVMjJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmuu4f4qyBr5Cqs6GK0Y+r5TZzWaPW3sc44nH0mAj9znztELLORIVfxOpM9ATQoLQMrX/7NAaLb8bd5BgjfAC6nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqXkWX9+wEYDMJdKETD0kSc1J1a+bfpVwwl6F7epiV3ydAgMGAAEEBQYHAQAHBAIFAQAKDICEHgAAAAAABg==';
+const TOKEN2022_TRANSACTION_NEW = 'Adf9Vdek/PoMr7UwhMXTQgwZA7sU45j6t/BNMSKfejGMgRQfsUrPZKMxp18oDJjKTLBv9uFGyVH76my5ZXNIqggBAAUIsVrZO/4XZlvG4lFSb4GrQsXPrig2XzkVApjyuR3J8Kuv5X1XTyrrOfoGXielYXq+uKkRY6dbhZMxueW2JgtULAA7U1NWaRftq29fMCS9jthlzFgMmwJ/QXL5h0EGoj27jJclj04kifG7PRApFI4NgwtaE5na/xCEBI572Nvp+Fmuu4f4qyBr5Cqs6GK0Y+r5TZzWaPW3sc44nH0mAj9zn6tQn5QhsSpV2zlQ/bN1izwNbBdfA0wOQed+pfCZET4OAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAG3fbh7nWP3hhCXbzkbM3athr8TYO5DSf+vfko2KGL/HkWX9+wEYDMJdKETD0kSc1J1a+bfpVwwl6F7epiV3ydAgMGAAEEBQYHAQAHBAIFAQAKDICEHgAAAAAABg==';
 const TOKEN_TRANSACTION_EXISTED = 'AZACaD9gHkQeMag0W1tLBc158hzwFiFcRcf5j6QNfgrqYLspt7BWicoqsInfwAULshpTrpd5zK6gifXK06K3OAUBAAIFsVrZO/4XZlvG4lFSb4GrQsXPrig2XzkVApjyuR3J8Ksi+HAOIOYu3jKy+J1c0LXM2e+armpeys+U9cANvscFTLJxcFWwHQFJMo41MEsM6BW+WbfrOxwvvYCKmsqBocNuBt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKk7RCyzkSFX8TqTPQE0KC0DK1/+zQGi2/G3eQYI3wAup3kWX9+wEYDMJdKETD0kSc1J1a+bfpVwwl6F7epiV3ydAQMEAQQCAAoMgIQeAAAAAAAG';
+const TOKEN2022_TRANSACTION_EXISTED = 'Ac72328X0I6ndrKkW+b3JvPiqhRe7/rmYxuUsq+r9kw4wqRrMCSCIF5Ie3aMdO9RsbSb8OLdVBQyfv+ux/572QUBAAIFsVrZO/4XZlvG4lFSb4GrQsXPrig2XzkVApjyuR3J8KsAO1NTVmkX7atvXzAkvY7YZcxYDJsCf0Fy+YdBBqI9u6/lfVdPKus5+gZeJ6Vher64qRFjp1uFkzG55bYmC1QsBt324e51j94YQl285GzN2rYa/E2DuQ0n/r35KNihi/yrUJ+UIbEqVds5UP2zdYs8DWwXXwNMDkHnfqXwmRE+DnkWX9+wEYDMJdKETD0kSc1J1a+bfpVwwl6F7epiV3ydAQMEAQQCAAoMgIQeAAAAAAAG';
 const TRANSACTIONS = JSON.parse(await fs.readFile('./test/fixtures/transactions.json'));
 const TOKEN_TRANSACTIONS = JSON.parse(await fs.readFile('./test/fixtures/token-transactions.json'));
+const TOKEN2022_TRANSACTIONS = JSON.parse(await fs.readFile('./test/fixtures/token-2022-transactions.json'));
 
 const solanaATsolana = {
   _id: 'solana@solana',
@@ -68,6 +74,18 @@ const yearnFinanceATsolana = {
   // off-curve public keys
   address: 'BXZX2JRJFjvKazM1ibeDFxgAngKExb74MRXzXKvgikxX',
   decimals: 8,
+};
+
+const paypalusdATsolana = {
+  _id: 'paypal-usd@solana',
+  asset: 'paypal-usd',
+  platform: 'solana',
+  type: 'token',
+  name: 'PayPal USD',
+  symbol: 'PYUSD',
+  // token 2022
+  address: 'CXk2AMBfi3TwaEL2468s6zP8xq9NxTXjp9gjMgzeUynM',
+  decimals: 6,
 };
 
 const COIN_PRICE = 21.45;
@@ -243,7 +261,7 @@ describe('Solana Wallet', () => {
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${WALLET_ADDRESS}/balance`,
+          url: `api/v2/account/${WALLET_ADDRESS}/info`,
           baseURL: 'node',
           headers: sinon.match.object,
         }).resolves({ balance: 504000000 });
@@ -265,17 +283,17 @@ describe('Solana Wallet', () => {
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${WALLET_ADDRESS}/balance`,
+          url: `api/v2/account/${WALLET_ADDRESS}/info`,
           baseURL: 'node',
           headers: sinon.match.object,
         }).resolves({ balance: 504000000 })
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${TOKEN_ACCOUNT}/tokenbalance`,
+          url: `api/v2/token/${usdcoinATsolana.address}/${WALLET_ADDRESS}/info`,
           baseURL: 'node',
           headers: sinon.match.object,
-        }).resolves({ balance: 6_000000 });
+        }).resolves({ balance: 6_000000, exists: true, owner: TOKEN_PROGRAM });
       const storage = sinon.mock(defaultOptionsToken.storage);
       storage.expects('set').once().withArgs('balance', '6000000');
       storage.expects('save').once();
@@ -294,17 +312,17 @@ describe('Solana Wallet', () => {
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${WALLET_ADDRESS}/balance`,
+          url: `api/v2/account/${WALLET_ADDRESS}/info`,
           baseURL: 'node',
           headers: sinon.match.object,
         }).resolves({ balance: 504000000 })
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: 'api/v1/account/8Lu2X1RXhEsfokC5a2QzBD4Se7EHf9rQ3EuXk5yFbjb/tokenbalance',
+          url: `api/v2/token/${yearnFinanceATsolana.address}/${WALLET_ADDRESS}/info`,
           baseURL: 'node',
           headers: sinon.match.object,
-        }).resolves({ balance: 6_000000 });
+        }).resolves({ balance: 6_000000, exists: true, owner: TOKEN_PROGRAM });
       const storage = sinon.mock(defaultOptionsToken.storage);
       storage.expects('set').once().withArgs('balance', '6000000');
       storage.expects('save').once();
@@ -319,12 +337,72 @@ describe('Solana Wallet', () => {
       storage.verify();
     });
 
+    it('should load wallet (token-2022)', async () => {
+      sinon.stub(defaultOptionsToken, 'request')
+        .withArgs({
+          seed: 'device',
+          method: 'GET',
+          url: `api/v2/account/${WALLET_ADDRESS}/info`,
+          baseURL: 'node',
+          headers: sinon.match.object,
+        }).resolves({ balance: 504000000 })
+        .withArgs({
+          seed: 'device',
+          method: 'GET',
+          url: `api/v2/token/${paypalusdATsolana.address}/${WALLET_ADDRESS}/info`,
+          baseURL: 'node',
+          headers: sinon.match.object,
+        }).resolves({ balance: 6_000000, exists: true, owner: TOKEN_PROGRAM2022 });
+      const storage = sinon.mock(defaultOptionsToken.storage);
+      storage.expects('set').once().withArgs('balance', '6000000');
+      storage.expects('save').once();
+      const wallet = new Wallet({
+        ...defaultOptionsToken,
+        crypto: paypalusdATsolana,
+      });
+      await wallet.open(RANDOM_PUBLIC_KEY);
+      await wallet.load();
+      assert.equal(wallet.state, Wallet.STATE_LOADED);
+      assert.equal(wallet.balance.value, 6000000n);
+      storage.verify();
+    });
+
+    it('should load wallet (empty wallet, unknown token)', async () => {
+      sinon.stub(defaultOptionsToken, 'request')
+        .withArgs({
+          seed: 'device',
+          method: 'GET',
+          url: `api/v2/account/${WALLET_ADDRESS}/info`,
+          baseURL: 'node',
+          headers: sinon.match.object,
+        }).resolves({ balance: 504000000 })
+        .withArgs({
+          seed: 'device',
+          method: 'GET',
+          url: `api/v2/token/${paypalusdATsolana.address}/${WALLET_ADDRESS}/info`,
+          baseURL: 'node',
+          headers: sinon.match.object,
+        }).resolves({ balance: 0, exists: false });
+      const storage = sinon.mock(defaultOptionsToken.storage);
+      storage.expects('set').once().withArgs('balance', '0');
+      storage.expects('save').once();
+      const wallet = new Wallet({
+        ...defaultOptionsToken,
+        crypto: paypalusdATsolana,
+      });
+      await wallet.open(RANDOM_PUBLIC_KEY);
+      await wallet.load();
+      assert.equal(wallet.state, Wallet.STATE_LOADED);
+      assert.equal(wallet.balance.value, 0n);
+      storage.verify();
+    });
+
     it('should set STATE_ERROR on error', async () => {
       sinon.stub(defaultOptionsCoin, 'request')
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${WALLET_ADDRESS}/balance`,
+          url: `api/v2/account/${WALLET_ADDRESS}/info`,
           baseURL: 'node',
           headers: sinon.match.object,
         }).rejects();
@@ -385,7 +463,7 @@ describe('Solana Wallet', () => {
           .withArgs({
             seed: 'device',
             method: 'GET',
-            url: `api/v1/account/${WALLET_ADDRESS}/balance`,
+            url: `api/v2/account/${WALLET_ADDRESS}/info`,
             baseURL: 'node',
             headers: sinon.match.object,
           }).resolves({ balance: 504000000 });
@@ -444,7 +522,7 @@ describe('Solana Wallet', () => {
           .withArgs({
             seed: 'device',
             method: 'GET',
-            url: `api/v1/account/${WALLET_ADDRESS}/balance`,
+            url: `api/v2/account/${WALLET_ADDRESS}/info`,
             baseURL: 'node',
             headers: sinon.match.object,
           }).resolves({ balance: 10_000000000 })
@@ -457,14 +535,14 @@ describe('Solana Wallet', () => {
           .withArgs({
             seed: 'device',
             method: 'GET',
-            url: `api/v1/account/${DESTIONATION_ADDRESS}/info`,
+            url: `api/v2/account/${DESTIONATION_ADDRESS}/info`,
             baseURL: 'node',
             headers: sinon.match.object,
           }).resolves({ })
           .withArgs({
             seed: 'device',
             method: 'GET',
-            url: 'api/v1/minimumBalanceForRentExemptAccount',
+            url: 'api/v2/minimumBalanceForRentExemptAccount',
             params: { size: 0 },
             baseURL: 'node',
             headers: sinon.match.object,
@@ -472,18 +550,18 @@ describe('Solana Wallet', () => {
           .withArgs({
             seed: 'device',
             method: 'GET',
-            url: 'api/v1/latestBlockhash',
+            url: 'api/v2/latestBlockhash',
             baseURL: 'node',
             headers: sinon.match.object,
           }).resolves(LATEST_BLOCKHASH)
           .withArgs({
             seed: 'device',
             method: 'POST',
-            url: 'api/v1/feeForMessage',
+            url: 'api/v2/feeForMessage',
             data: sinon.match.any,
             baseURL: 'node',
             headers: sinon.match.object,
-          }).resolves({ fee: { value: 5000 } });
+          }).resolves({ fee: 5000 });
         wallet = new Wallet({
           ...defaultOptionsCoin,
         });
@@ -551,28 +629,28 @@ describe('Solana Wallet', () => {
           .withArgs({
             seed: 'device',
             method: 'GET',
-            url: `api/v1/account/${WALLET_ADDRESS}/balance`,
+            url: `api/v2/account/${WALLET_ADDRESS}/info`,
             baseURL: 'node',
             headers: sinon.match.object,
           }).resolves({ balance: 10_000000000 })
           .withArgs({
             seed: 'device',
             method: 'GET',
-            url: `api/v1/account/${TOKEN_ACCOUNT}/tokenbalance`,
+            url: `api/v2/token/${usdcoinATsolana.address}/${WALLET_ADDRESS}/info`,
             baseURL: 'node',
             headers: sinon.match.object,
-          }).resolves({ balance: 6_000000 })
+          }).resolves({ balance: 6_000000, exists: true, owner: TOKEN_PROGRAM })
           .withArgs({
             seed: 'device',
             method: 'GET',
-            url: `api/v1/account/${DESTIONATION_TOKEN_ACCCOUNT}/info`,
+            url: `api/v2/account/${DESTIONATION_TOKEN_ACCCOUNT}/info`,
             baseURL: 'node',
             headers: sinon.match.object,
-          }).resolves({ })
+          }).resolves({ exists: false })
           .withArgs({
             seed: 'device',
             method: 'GET',
-            url: 'api/v1/minimumBalanceForRentExemptAccount',
+            url: 'api/v2/minimumBalanceForRentExemptAccount',
             params: { size: 165 },
             baseURL: 'node',
             headers: sinon.match.object,
@@ -580,7 +658,7 @@ describe('Solana Wallet', () => {
           .withArgs({
             seed: 'device',
             method: 'GET',
-            url: 'api/v1/minimumBalanceForRentExemptAccount',
+            url: 'api/v2/minimumBalanceForRentExemptAccount',
             params: { size: 0 },
             baseURL: 'node',
             headers: sinon.match.object,
@@ -588,18 +666,18 @@ describe('Solana Wallet', () => {
           .withArgs({
             seed: 'device',
             method: 'GET',
-            url: 'api/v1/latestBlockhash',
+            url: 'api/v2/latestBlockhash',
             baseURL: 'node',
             headers: sinon.match.object,
           }).resolves(LATEST_BLOCKHASH)
           .withArgs({
             seed: 'device',
             method: 'POST',
-            url: 'api/v1/feeForMessage',
+            url: 'api/v2/feeForMessage',
             data: sinon.match.any,
             baseURL: 'node',
             headers: sinon.match.object,
-          }).resolves({ fee: { value: 5000 } });
+          }).resolves({ fee: 5000 });
         wallet = new Wallet({
           ...defaultOptionsToken,
         });
@@ -633,14 +711,14 @@ describe('Solana Wallet', () => {
           .withArgs({
             seed: 'device',
             method: 'GET',
-            url: `api/v1/account/${DESTIONATION_TOKEN_ACCCOUNT}/info`,
+            url: `api/v2/account/${DESTIONATION_TOKEN_ACCCOUNT}/info`,
             baseURL: 'node',
             headers: sinon.match.object,
-          }).resolves({ data: {} })
+          }).resolves({ exists: true })
           .withArgs({
             seed: 'device',
             method: 'GET',
-            url: `api/v1/account/${WALLET_ADDRESS}/balance`,
+            url: `api/v2/account/${WALLET_ADDRESS}/info`,
             baseURL: 'node',
             headers: sinon.match.object,
           }).resolves({ balance: 0 });
@@ -662,7 +740,7 @@ describe('Solana Wallet', () => {
         request.withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${WALLET_ADDRESS}/balance`,
+          url: `api/v2/account/${WALLET_ADDRESS}/info`,
           baseURL: 'node',
           headers: sinon.match.object,
         }).resolves({ balance: 5000 });
@@ -701,7 +779,7 @@ describe('Solana Wallet', () => {
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${WALLET_ADDRESS}/balance`,
+          url: `api/v2/account/${WALLET_ADDRESS}/info`,
           baseURL: 'node',
           headers: sinon.match.object,
         }).resolves({ balance: 10_000000000 })
@@ -714,14 +792,14 @@ describe('Solana Wallet', () => {
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${DESTIONATION_ADDRESS}/info`,
+          url: `api/v2/account/${DESTIONATION_ADDRESS}/info`,
           baseURL: 'node',
           headers: sinon.match.object,
         }).resolves({ })
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: 'api/v1/minimumBalanceForRentExemptAccount',
+          url: 'api/v2/minimumBalanceForRentExemptAccount',
           params: { size: 0 },
           baseURL: 'node',
           headers: sinon.match.object,
@@ -729,18 +807,18 @@ describe('Solana Wallet', () => {
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: 'api/v1/latestBlockhash',
+          url: 'api/v2/latestBlockhash',
           baseURL: 'node',
           headers: sinon.match.object,
         }).resolves(LATEST_BLOCKHASH)
         .withArgs({
           seed: 'device',
           method: 'POST',
-          url: 'api/v1/feeForMessage',
+          url: 'api/v2/feeForMessage',
           data: sinon.match.any,
           baseURL: 'node',
           headers: sinon.match.object,
-        }).resolves({ fee: { value: 5000 } });
+        }).resolves({ fee: 5000 });
       const wallet = new Wallet({
         ...defaultOptionsCoin,
       });
@@ -759,28 +837,28 @@ describe('Solana Wallet', () => {
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${WALLET_ADDRESS}/balance`,
+          url: `api/v2/account/${WALLET_ADDRESS}/info`,
           baseURL: 'node',
           headers: sinon.match.object,
         }).resolves({ balance: 10_000000000 })
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${TOKEN_ACCOUNT}/tokenbalance`,
+          url: `api/v2/token/${usdcoinATsolana.address}/${WALLET_ADDRESS}/info`,
           baseURL: 'node',
           headers: sinon.match.object,
-        }).resolves({ balance: 6_000000 })
+        }).resolves({ balance: 6_000000, exists: true, owner: TOKEN_PROGRAM })
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${DESTIONATION_TOKEN_ACCCOUNT}/info`,
+          url: `api/v2/account/${DESTIONATION_TOKEN_ACCCOUNT}/info`,
           baseURL: 'node',
           headers: sinon.match.object,
         }).resolves({ })
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: 'api/v1/minimumBalanceForRentExemptAccount',
+          url: 'api/v2/minimumBalanceForRentExemptAccount',
           params: { size: 165 },
           baseURL: 'node',
           headers: sinon.match.object,
@@ -788,18 +866,18 @@ describe('Solana Wallet', () => {
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: 'api/v1/latestBlockhash',
+          url: 'api/v2/latestBlockhash',
           baseURL: 'node',
           headers: sinon.match.object,
         }).resolves(LATEST_BLOCKHASH)
         .withArgs({
           seed: 'device',
           method: 'POST',
-          url: 'api/v1/feeForMessage',
+          url: 'api/v2/feeForMessage',
           data: sinon.match.any,
           baseURL: 'node',
           headers: sinon.match.object,
-        }).resolves({ fee: { value: 5000 } });
+        }).resolves({ fee: 5000 });
       const wallet = new Wallet({
         ...defaultOptionsToken,
       });
@@ -817,7 +895,7 @@ describe('Solana Wallet', () => {
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${WALLET_ADDRESS}/balance`,
+          url: `api/v2/account/${WALLET_ADDRESS}/info`,
           baseURL: 'node',
           headers: sinon.match.object,
         }).resolves({ balance: 10_000000000 })
@@ -830,14 +908,14 @@ describe('Solana Wallet', () => {
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${DESTIONATION_ADDRESS}/info`,
+          url: `api/v2/account/${DESTIONATION_ADDRESS}/info`,
           baseURL: 'node',
           headers: sinon.match.object,
-        }).resolves({ })
+        }).resolves({ exists: false })
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: 'api/v1/minimumBalanceForRentExemptAccount',
+          url: 'api/v2/minimumBalanceForRentExemptAccount',
           params: { size: 0 },
           baseURL: 'node',
           headers: sinon.match.object,
@@ -845,18 +923,18 @@ describe('Solana Wallet', () => {
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: 'api/v1/latestBlockhash',
+          url: 'api/v2/latestBlockhash',
           baseURL: 'node',
           headers: sinon.match.object,
         }).resolves(LATEST_BLOCKHASH)
         .withArgs({
           seed: 'device',
           method: 'POST',
-          url: 'api/v1/feeForMessage',
+          url: 'api/v2/feeForMessage',
           data: sinon.match.any,
           baseURL: 'node',
           headers: sinon.match.object,
-        }).resolves({ fee: { value: 5000 } });
+        }).resolves({ fee: 5000 });
       const wallet = new Wallet({
         ...defaultOptionsCoin,
       });
@@ -875,28 +953,28 @@ describe('Solana Wallet', () => {
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${WALLET_ADDRESS}/balance`,
+          url: `api/v2/account/${WALLET_ADDRESS}/info`,
           baseURL: 'node',
           headers: sinon.match.object,
-        }).resolves({ balance: 10_000000000 })
+        }).resolves({ balance: 10_000000000, exists: true })
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${TOKEN_ACCOUNT}/tokenbalance`,
+          url: `api/v2/token/${usdcoinATsolana.address}/${WALLET_ADDRESS}/info`,
           baseURL: 'node',
           headers: sinon.match.object,
-        }).resolves({ balance: 6_000000 })
+        }).resolves({ balance: 6_000000, exists: true, owner: TOKEN_PROGRAM })
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${DESTIONATION_TOKEN_ACCCOUNT}/info`,
+          url: `api/v2/account/${DESTIONATION_TOKEN_ACCCOUNT}/info`,
           baseURL: 'node',
           headers: sinon.match.object,
-        }).resolves({ })
+        }).resolves({ exists: false })
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: 'api/v1/minimumBalanceForRentExemptAccount',
+          url: 'api/v2/minimumBalanceForRentExemptAccount',
           params: { size: 165 },
           baseURL: 'node',
           headers: sinon.match.object,
@@ -904,18 +982,18 @@ describe('Solana Wallet', () => {
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: 'api/v1/latestBlockhash',
+          url: 'api/v2/latestBlockhash',
           baseURL: 'node',
           headers: sinon.match.object,
         }).resolves(LATEST_BLOCKHASH)
         .withArgs({
           seed: 'device',
           method: 'POST',
-          url: 'api/v1/feeForMessage',
+          url: 'api/v2/feeForMessage',
           data: sinon.match.any,
           baseURL: 'node',
           headers: sinon.match.object,
-        }).resolves({ fee: { value: 5000 } });
+        }).resolves({ fee: 5000 });
       const wallet = new Wallet({
         ...defaultOptionsToken,
       });
@@ -933,28 +1011,28 @@ describe('Solana Wallet', () => {
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${WALLET_ADDRESS}/balance`,
+          url: `api/v2/account/${WALLET_ADDRESS}/info`,
           baseURL: 'node',
           headers: sinon.match.object,
-        }).resolves({ balance: 10_000000000 })
+        }).resolves({ balance: 10_000000000, exists: true })
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${TOKEN_ACCOUNT}/tokenbalance`,
+          url: `api/v2/token/${usdcoinATsolana.address}/${WALLET_ADDRESS}/info`,
           baseURL: 'node',
           headers: sinon.match.object,
-        }).resolves({ balance: 6_000000 })
+        }).resolves({ balance: 6_000000, exists: true, owner: TOKEN_PROGRAM })
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${DESTIONATION_TOKEN_ACCCOUNT}/info`,
+          url: `api/v2/account/${DESTIONATION_TOKEN_ACCCOUNT}/info`,
           baseURL: 'node',
           headers: sinon.match.object,
-        }).resolves({ data: {} })
+        }).resolves({ exists: true })
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: 'api/v1/minimumBalanceForRentExemptAccount',
+          url: 'api/v2/minimumBalanceForRentExemptAccount',
           params: { size: 165 },
           baseURL: 'node',
           headers: sinon.match.object,
@@ -962,18 +1040,18 @@ describe('Solana Wallet', () => {
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: 'api/v1/latestBlockhash',
+          url: 'api/v2/latestBlockhash',
           baseURL: 'node',
           headers: sinon.match.object,
         }).resolves(LATEST_BLOCKHASH)
         .withArgs({
           seed: 'device',
           method: 'POST',
-          url: 'api/v1/feeForMessage',
+          url: 'api/v2/feeForMessage',
           data: sinon.match.any,
           baseURL: 'node',
           headers: sinon.match.object,
-        }).resolves({ fee: { value: 5000 } });
+        }).resolves({ fee: 5000 });
       const wallet = new Wallet({
         ...defaultOptionsToken,
       });
@@ -993,7 +1071,7 @@ describe('Solana Wallet', () => {
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${WALLET_ADDRESS}/balance`,
+          url: `api/v2/account/${WALLET_ADDRESS}/info`,
           baseURL: 'node',
           headers: sinon.match.object,
         }).resolves({ balance: 10_000000000 })
@@ -1006,14 +1084,14 @@ describe('Solana Wallet', () => {
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${DESTIONATION_ADDRESS}/info`,
+          url: `api/v2/account/${DESTIONATION_ADDRESS}/info`,
           baseURL: 'node',
           headers: sinon.match.object,
         }).resolves({ })
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: 'api/v1/minimumBalanceForRentExemptAccount',
+          url: 'api/v2/minimumBalanceForRentExemptAccount',
           params: { size: 0 },
           baseURL: 'node',
           headers: sinon.match.object,
@@ -1021,22 +1099,22 @@ describe('Solana Wallet', () => {
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: 'api/v1/latestBlockhash',
+          url: 'api/v2/latestBlockhash',
           baseURL: 'node',
           headers: sinon.match.object,
         }).resolves(LATEST_BLOCKHASH)
         .withArgs({
           seed: 'device',
           method: 'POST',
-          url: 'api/v1/feeForMessage',
+          url: 'api/v2/feeForMessage',
           data: sinon.match.any,
           baseURL: 'node',
           headers: sinon.match.object,
-        }).resolves({ fee: { value: 5000 } })
+        }).resolves({ fee: 5000 })
         .withArgs({
           seed: 'device',
           method: 'POST',
-          url: 'api/v1/tx/submit',
+          url: 'api/v2/tx/submit',
           data: {
             transaction: TRANSACTION,
           },
@@ -1063,28 +1141,28 @@ describe('Solana Wallet', () => {
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${WALLET_ADDRESS}/balance`,
+          url: `api/v2/account/${WALLET_ADDRESS}/info`,
           baseURL: 'node',
           headers: sinon.match.object,
         }).resolves({ balance: 10_000000000 })
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${TOKEN_ACCOUNT}/tokenbalance`,
+          url: `api/v2/token/${usdcoinATsolana.address}/${WALLET_ADDRESS}/info`,
           baseURL: 'node',
           headers: sinon.match.object,
-        }).resolves({ balance: 6_000000 })
+        }).resolves({ balance: 6_000000, exists: true, owner: TOKEN_PROGRAM })
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${DESTIONATION_TOKEN_ACCCOUNT}/info`,
+          url: `api/v2/account/${DESTIONATION_TOKEN_ACCCOUNT}/info`,
           baseURL: 'node',
           headers: sinon.match.object,
-        }).resolves({ })
+        }).resolves({ exists: false })
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: 'api/v1/minimumBalanceForRentExemptAccount',
+          url: 'api/v2/minimumBalanceForRentExemptAccount',
           params: { size: 165 },
           baseURL: 'node',
           headers: sinon.match.object,
@@ -1092,22 +1170,22 @@ describe('Solana Wallet', () => {
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: 'api/v1/latestBlockhash',
+          url: 'api/v2/latestBlockhash',
           baseURL: 'node',
           headers: sinon.match.object,
         }).resolves(LATEST_BLOCKHASH)
         .withArgs({
           seed: 'device',
           method: 'POST',
-          url: 'api/v1/feeForMessage',
+          url: 'api/v2/feeForMessage',
           data: sinon.match.any,
           baseURL: 'node',
           headers: sinon.match.object,
-        }).resolves({ fee: { value: 5000 } })
+        }).resolves({ fee: 5000 })
         .withArgs({
           seed: 'device',
           method: 'POST',
-          url: 'api/v1/tx/submit',
+          url: 'api/v2/tx/submit',
           data: {
             transaction: TOKEN_TRANSACTION_NEW,
           },
@@ -1133,28 +1211,28 @@ describe('Solana Wallet', () => {
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${WALLET_ADDRESS}/balance`,
+          url: `api/v2/account/${WALLET_ADDRESS}/info`,
           baseURL: 'node',
           headers: sinon.match.object,
         }).resolves({ balance: 10_000000000 })
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${TOKEN_ACCOUNT}/tokenbalance`,
+          url: `api/v2/token/${usdcoinATsolana.address}/${WALLET_ADDRESS}/info`,
           baseURL: 'node',
           headers: sinon.match.object,
-        }).resolves({ balance: 6_000000 })
+        }).resolves({ balance: 6_000000, exists: true, owner: TOKEN_PROGRAM })
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${DESTIONATION_TOKEN_ACCCOUNT}/info`,
+          url: `api/v2/account/${DESTIONATION_TOKEN_ACCCOUNT}/info`,
           baseURL: 'node',
           headers: sinon.match.object,
-        }).resolves({ data: {} })
+        }).resolves({ exists: true })
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: 'api/v1/minimumBalanceForRentExemptAccount',
+          url: 'api/v2/minimumBalanceForRentExemptAccount',
           params: { size: 165 },
           baseURL: 'node',
           headers: sinon.match.object,
@@ -1162,22 +1240,22 @@ describe('Solana Wallet', () => {
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: 'api/v1/latestBlockhash',
+          url: 'api/v2/latestBlockhash',
           baseURL: 'node',
           headers: sinon.match.object,
         }).resolves(LATEST_BLOCKHASH)
         .withArgs({
           seed: 'device',
           method: 'POST',
-          url: 'api/v1/feeForMessage',
+          url: 'api/v2/feeForMessage',
           data: sinon.match.any,
           baseURL: 'node',
           headers: sinon.match.object,
-        }).resolves({ fee: { value: 5000 } })
+        }).resolves({ fee: 5000 })
         .withArgs({
           seed: 'device',
           method: 'POST',
-          url: 'api/v1/tx/submit',
+          url: 'api/v2/tx/submit',
           data: {
             transaction: TOKEN_TRANSACTION_EXISTED,
           },
@@ -1197,6 +1275,148 @@ describe('Solana Wallet', () => {
       assert.equal(wallet.balance.value, 4_000000n);
       assert.equal(id, '123456');
     });
+
+    it('should create valid transaction (token-2022) to new account', async () => {
+      sinon.stub(defaultOptionsToken, 'request')
+        .withArgs({
+          seed: 'device',
+          method: 'GET',
+          url: `api/v2/account/${WALLET_ADDRESS}/info`,
+          baseURL: 'node',
+          headers: sinon.match.object,
+        }).resolves({ balance: 10_000000000 })
+        .withArgs({
+          seed: 'device',
+          method: 'GET',
+          url: `api/v2/token/${paypalusdATsolana.address}/${WALLET_ADDRESS}/info`,
+          baseURL: 'node',
+          headers: sinon.match.object,
+        }).resolves({ balance: 6_000000, exists: true, owner: TOKEN_PROGRAM2022 })
+        .withArgs({
+          seed: 'device',
+          method: 'GET',
+          url: `api/v2/account/${DESTIONATION_TOKEN2022_ACCCOUNT}/info`,
+          baseURL: 'node',
+          headers: sinon.match.object,
+        }).resolves({ exists: false })
+        .withArgs({
+          seed: 'device',
+          method: 'GET',
+          url: 'api/v2/minimumBalanceForRentExemptAccount',
+          params: { size: 165 },
+          baseURL: 'node',
+          headers: sinon.match.object,
+        }).resolves({ rent: 2004480 })
+        .withArgs({
+          seed: 'device',
+          method: 'GET',
+          url: 'api/v2/latestBlockhash',
+          baseURL: 'node',
+          headers: sinon.match.object,
+        }).resolves(LATEST_BLOCKHASH)
+        .withArgs({
+          seed: 'device',
+          method: 'POST',
+          url: 'api/v2/feeForMessage',
+          data: sinon.match.any,
+          baseURL: 'node',
+          headers: sinon.match.object,
+        }).resolves({ fee: 5000 })
+        .withArgs({
+          seed: 'device',
+          method: 'POST',
+          url: 'api/v2/tx/submit',
+          data: {
+            transaction: TOKEN2022_TRANSACTION_NEW,
+          },
+          baseURL: 'node',
+          headers: sinon.match.object,
+        }).resolves('123456');
+      const wallet = new Wallet({
+        ...defaultOptionsToken,
+        crypto: paypalusdATsolana,
+      });
+      await wallet.open(RANDOM_PUBLIC_KEY);
+      await wallet.load();
+
+      const id = await wallet.createTransaction({
+        address: DESTIONATION_ADDRESS,
+        amount: new Amount(2_000000, wallet.crypto.decimals),
+      }, RANDOM_SEED);
+      assert.equal(wallet.balance.value, 4_000000n);
+      assert.equal(id, '123456');
+    });
+
+    it('should create valid transaction (token-2022) to existed account', async () => {
+      sinon.stub(defaultOptionsToken, 'request')
+        .withArgs({
+          seed: 'device',
+          method: 'GET',
+          url: `api/v2/account/${WALLET_ADDRESS}/info`,
+          baseURL: 'node',
+          headers: sinon.match.object,
+        }).resolves({ balance: 10_000000000 })
+        .withArgs({
+          seed: 'device',
+          method: 'GET',
+          url: `api/v2/token/${paypalusdATsolana.address}/${WALLET_ADDRESS}/info`,
+          baseURL: 'node',
+          headers: sinon.match.object,
+        }).resolves({ balance: 6_000000, exists: true, owner: TOKEN_PROGRAM2022 })
+        .withArgs({
+          seed: 'device',
+          method: 'GET',
+          url: `api/v2/account/${DESTIONATION_TOKEN2022_ACCCOUNT}/info`,
+          baseURL: 'node',
+          headers: sinon.match.object,
+        }).resolves({ exists: true })
+        .withArgs({
+          seed: 'device',
+          method: 'GET',
+          url: 'api/v2/minimumBalanceForRentExemptAccount',
+          params: { size: 165 },
+          baseURL: 'node',
+          headers: sinon.match.object,
+        }).resolves({ rent: 2004480 })
+        .withArgs({
+          seed: 'device',
+          method: 'GET',
+          url: 'api/v2/latestBlockhash',
+          baseURL: 'node',
+          headers: sinon.match.object,
+        }).resolves(LATEST_BLOCKHASH)
+        .withArgs({
+          seed: 'device',
+          method: 'POST',
+          url: 'api/v2/feeForMessage',
+          data: sinon.match.any,
+          baseURL: 'node',
+          headers: sinon.match.object,
+        }).resolves({ fee: 5000 })
+        .withArgs({
+          seed: 'device',
+          method: 'POST',
+          url: 'api/v2/tx/submit',
+          data: {
+            transaction: TOKEN2022_TRANSACTION_EXISTED,
+          },
+          baseURL: 'node',
+          headers: sinon.match.object,
+        }).resolves('123456');
+      const wallet = new Wallet({
+        ...defaultOptionsToken,
+        crypto: paypalusdATsolana,
+      });
+      await wallet.open(RANDOM_PUBLIC_KEY);
+      await wallet.load();
+
+      const id = await wallet.createTransaction({
+        address: DESTIONATION_ADDRESS,
+        amount: new Amount(2_000000, wallet.crypto.decimals),
+      }, RANDOM_SEED);
+      assert.equal(wallet.balance.value, 4_000000n);
+      assert.equal(id, '123456');
+    });
   });
 
   describe('loadTransactions', () => {
@@ -1205,14 +1425,14 @@ describe('Solana Wallet', () => {
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${WALLET_ADDRESS}/balance`,
+          url: `api/v2/account/${WALLET_ADDRESS}/info`,
           baseURL: 'node',
           headers: sinon.match.object,
         }).resolves({ balance: 10_000000000 })
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${WALLET_ADDRESS}/transactions`,
+          url: `api/v2/account/${WALLET_ADDRESS}/transactions`,
           params: sinon.match.object,
           baseURL: 'node',
           headers: sinon.match.object,
@@ -1224,11 +1444,11 @@ describe('Solana Wallet', () => {
       await wallet.load();
 
       const res = await wallet.loadTransactions();
-      assert.strictEqual(res.hasMore, false);
-      assert.strictEqual(res.transactions.length, 5);
-      assert.strictEqual(res.transactions[0].action, SolanaTransaction.ACTION_TOKEN_TRANSFER);
-      assert.strictEqual(res.transactions[4].action, SolanaTransaction.ACTION_TRANSFER);
-      assert.strictEqual(res.cursor, '4yS6vNUdCXfvuvHWCj19EgZXDTNmeBsh54AYZgRi4dz9MaXi3vhh1H9mTfHiBTvmwPpFnEn1i1yqZ8to76NvyJdA');
+      assert.equal(res.hasMore, false);
+      assert.equal(res.transactions.length, 6);
+      assert.equal(res.transactions[0].action, SolanaTransaction.ACTION_TOKEN_TRANSFER);
+      assert.equal(res.transactions[4].action, SolanaTransaction.ACTION_TRANSFER);
+      assert.equal(res.cursor, '4yS6vNUdCXfvuvHWCj19EgZXDTNmeBsh54AYZgRi4dz9MaXi3vhh1H9mTfHiBTvmwPpFnEn1i1yqZ8to76NvyJdA');
     });
 
     it('should load transactions (token)', async () => {
@@ -1236,21 +1456,21 @@ describe('Solana Wallet', () => {
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${WALLET_ADDRESS}/balance`,
+          url: `api/v2/account/${WALLET_ADDRESS}/info`,
           baseURL: 'node',
           headers: sinon.match.object,
         }).resolves({ balance: 10_000000000 })
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${TOKEN_ACCOUNT}/tokenbalance`,
+          url: `api/v2/token/${usdcoinATsolana.address}/${WALLET_ADDRESS}/info`,
           baseURL: 'node',
           headers: sinon.match.object,
-        }).resolves({ balance: 6_000000 })
+        }).resolves({ balance: 6_000000, exists: true, owner: TOKEN_PROGRAM })
         .withArgs({
           seed: 'device',
           method: 'GET',
-          url: `api/v1/account/${TOKEN_ACCOUNT}/transactions`,
+          url: `api/v2/account/${TOKEN_ACCOUNT}/transactions`,
           params: sinon.match.object,
           baseURL: 'node',
           headers: sinon.match.object,
@@ -1262,9 +1482,58 @@ describe('Solana Wallet', () => {
       await wallet.load();
 
       const res = await wallet.loadTransactions();
-      assert.strictEqual(res.hasMore, false);
-      assert.strictEqual(res.transactions.length, 2);
-      assert.strictEqual(res.cursor, '4jJbjAv2wGTTJ3hLARodj46XDMjVGVfGezVrSrkFP6vtkEoMM3q3sfnetyRi6wsLpTBwc87oeE7kaVfHwcp2N17n');
+      assert.equal(res.hasMore, false);
+      assert.equal(res.transactions.length, 2);
+      assert.equal(res.transactions[0].action, SolanaTransaction.ACTION_TRANSFER);
+      assert.equal(res.transactions[0].incoming, false);
+      assert.equal(res.transactions[0].amount.value, 4_000000n);
+      assert.equal(res.transactions[1].action, SolanaTransaction.ACTION_TRANSFER);
+      assert.equal(res.transactions[1].incoming, true);
+      assert.equal(res.transactions[1].amount.value, 10_000000n);
+      assert.equal(res.cursor, '5iLtZUHJYDFvSXr3qyFewtpDzfb7pVCW11zTccdZJca5chTrFW816GYfHUafkQPmc5rQHxXxm1KyT6chKtssxbxN');
+    });
+
+    it('should load transactions (token-2022)', async () => {
+      sinon.stub(defaultOptionsToken, 'request')
+        .withArgs({
+          seed: 'device',
+          method: 'GET',
+          url: `api/v2/account/${WALLET_ADDRESS}/info`,
+          baseURL: 'node',
+          headers: sinon.match.object,
+        }).resolves({ balance: 10_000000000 })
+        .withArgs({
+          seed: 'device',
+          method: 'GET',
+          url: `api/v2/token/${paypalusdATsolana.address}/${WALLET_ADDRESS}/info`,
+          baseURL: 'node',
+          headers: sinon.match.object,
+        }).resolves({ balance: 6_000000, exists: true, owner: TOKEN_PROGRAM2022 })
+        .withArgs({
+          seed: 'device',
+          method: 'GET',
+          url: `api/v2/account/${TOKEN2022_ACCOUNT}/transactions`,
+          params: sinon.match.object,
+          baseURL: 'node',
+          headers: sinon.match.object,
+        }).resolves(TOKEN2022_TRANSACTIONS);
+      const wallet = new Wallet({
+        ...defaultOptionsToken,
+        crypto: paypalusdATsolana,
+      });
+      await wallet.open(RANDOM_PUBLIC_KEY);
+      await wallet.load();
+
+      const res = await wallet.loadTransactions();
+      assert.equal(res.hasMore, false);
+      assert.equal(res.transactions.length, 2);
+      assert.equal(res.transactions[0].action, SolanaTransaction.ACTION_TRANSFER);
+      assert.equal(res.transactions[0].incoming, false);
+      assert.equal(res.transactions[0].amount.value, 10_000000n);
+      assert.equal(res.transactions[1].action, SolanaTransaction.ACTION_TRANSFER);
+      assert.equal(res.transactions[1].incoming, true);
+      assert.equal(res.transactions[1].amount.value, 100_000000n);
+      assert.equal(res.cursor, '375fS4ZGUY7AZXGincPPdx5kRRSKTQe2F9aHXTDYs8WckU76C2G1H3LCn6jSfeN7hMYR2BGNCH3xcViVaMpYTkK7');
     });
   });
 });
