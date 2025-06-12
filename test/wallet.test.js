@@ -1535,5 +1535,33 @@ describe('Solana Wallet', () => {
       assert.equal(res.transactions[1].amount.value, 100_000000n);
       assert.equal(res.cursor, '375fS4ZGUY7AZXGincPPdx5kRRSKTQe2F9aHXTDYs8WckU76C2G1H3LCn6jSfeN7hMYR2BGNCH3xcViVaMpYTkK7');
     });
+
+    it('should not fail load transactions (new token)', async () => {
+      sinon.stub(defaultOptionsToken, 'request')
+        .withArgs({
+          seed: 'device',
+          method: 'GET',
+          url: `api/v2/account/${WALLET_ADDRESS}/info`,
+          baseURL: 'node',
+          headers: sinon.match.object,
+        }).resolves({ balance: 10_000000000 })
+        .withArgs({
+          seed: 'device',
+          method: 'GET',
+          url: `api/v2/token/${usdcoinATsolana.address}/${WALLET_ADDRESS}/info`,
+          baseURL: 'node',
+          headers: sinon.match.object,
+        }).resolves({ balance: 0, exists: false });
+      const wallet = new Wallet({
+        ...defaultOptionsToken,
+      });
+      await wallet.open(RANDOM_PUBLIC_KEY);
+      await wallet.load();
+
+      const res = await wallet.loadTransactions();
+      assert.equal(res.hasMore, false);
+      assert.equal(res.transactions.length, 0);
+    });
+
   });
 });
