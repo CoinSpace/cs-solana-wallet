@@ -616,7 +616,7 @@ describe('Solana Wallet', () => {
         }, {
           name: 'BigAmountError',
           message: 'Big amount',
-          amount: new Amount(9_950243782n, wallet.crypto.decimals),
+          amount: new Amount(10_000000000n - 5000n - 890880n - 49746786n, wallet.crypto.decimals),
         });
       });
     });
@@ -829,7 +829,7 @@ describe('Solana Wallet', () => {
         address: DESTIONATION_ADDRESS,
         price: COIN_PRICE,
       });
-      assert.equal(maxAmount.value, 9_950243782n);
+      assert.equal(maxAmount.value, 10_000000000n - 5000n - 890880n - 49746786n);
     });
 
     it('should correct estimate max amount (token)', async () => {
