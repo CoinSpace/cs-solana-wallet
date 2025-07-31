@@ -1,6 +1,6 @@
 {
   "name": "@coinspace/cs-solana-wallet",
-  "version": "2.3.1",
+  "version": "2.4.0",
   "description": "Solana Wallet for Coin Wallet",
   "author": "Coin Wallet <support@coin.space> (https://coin.space/)",
   "license": "MIT",
