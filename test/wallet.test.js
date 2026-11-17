@@ -1120,7 +1120,7 @@ describe('Solana Wallet', () => {
           },
           baseURL: 'node',
           headers: sinon.match.object,
-        }).resolves('123456');
+        }).resolves();
       const wallet = new Wallet({
         ...defaultOptionsCoin,
       });
@@ -1133,7 +1133,7 @@ describe('Solana Wallet', () => {
         price: COIN_PRICE,
       }, RANDOM_SEED);
       assert.equal(wallet.balance.value, 7_976684977n);
-      assert.equal(id, '123456');
+      assert.equal(id, 'HEm3huV4jA8nqmnpcP89QAUy7KkgR7oo11dVs3Tg7cD9hzajuC5KR3jNytHZcf7QyAQWBtB7XHU1SBGeoWLKuME');
     });
 
     it('should create valid transaction (token) to new account', async () => {
@@ -1191,7 +1191,7 @@ describe('Solana Wallet', () => {
           },
           baseURL: 'node',
           headers: sinon.match.object,
-        }).resolves('123456');
+        }).resolves();
       const wallet = new Wallet({
         ...defaultOptionsToken,
       });
@@ -1203,7 +1203,7 @@ describe('Solana Wallet', () => {
         amount: new Amount(2_000000, wallet.crypto.decimals),
       }, RANDOM_SEED);
       assert.equal(wallet.balance.value, 4_000000n);
-      assert.equal(id, '123456');
+      assert.equal(id, '5KbGYfZ7nd7YQmqgWNd8fQhUk3ShyNprNbyWTz6jhfBMdpdFxHNWvLLrb3r9bVEgNzFMmrDopURogmLG2yKNvvdK');
     });
 
     it('should create valid transaction (token) to existed account', async () => {
@@ -1261,7 +1261,7 @@ describe('Solana Wallet', () => {
           },
           baseURL: 'node',
           headers: sinon.match.object,
-        }).resolves('123456');
+        }).resolves();
       const wallet = new Wallet({
         ...defaultOptionsToken,
       });
@@ -1273,7 +1273,7 @@ describe('Solana Wallet', () => {
         amount: new Amount(2_000000, wallet.crypto.decimals),
       }, RANDOM_SEED);
       assert.equal(wallet.balance.value, 4_000000n);
-      assert.equal(id, '123456');
+      assert.equal(id, '236hqTHmTSZM6rSiG4dbTkikxrX2AAmn5AgF3X77Xpdy1oXuhaJVyYh2EeuiPxAtsNv5ryNz841pSmZ3yrVd1GJJ');
     });
 
     it('should create valid transaction (token-2022) to new account', async () => {
@@ -1331,7 +1331,7 @@ describe('Solana Wallet', () => {
           },
           baseURL: 'node',
           headers: sinon.match.object,
-        }).resolves('123456');
+        }).resolves();
       const wallet = new Wallet({
         ...defaultOptionsToken,
         crypto: paypalusdATsolana,
@@ -1344,7 +1344,7 @@ describe('Solana Wallet', () => {
         amount: new Amount(2_000000, wallet.crypto.decimals),
       }, RANDOM_SEED);
       assert.equal(wallet.balance.value, 4_000000n);
-      assert.equal(id, '123456');
+      assert.equal(id, '5ptE9S4cc6JCz1BVxwGQ2kqiBsSe19bUGmPSe15LDETSy1yg9Uu5nNQW7uhv6avnyS72aDWaR3nwf3qhv8ETsKWT');
     });
 
     it('should create valid transaction (token-2022) to existed account', async () => {
@@ -1402,7 +1402,7 @@ describe('Solana Wallet', () => {
           },
           baseURL: 'node',
           headers: sinon.match.object,
-        }).resolves('123456');
+        }).resolves();
       const wallet = new Wallet({
         ...defaultOptionsToken,
         crypto: paypalusdATsolana,
@@ -1415,7 +1415,7 @@ describe('Solana Wallet', () => {
         amount: new Amount(2_000000, wallet.crypto.decimals),
       }, RANDOM_SEED);
       assert.equal(wallet.balance.value, 4_000000n);
-      assert.equal(id, '123456');
+      assert.equal(id, '4A2BQVYqdX5XF4AGV46PS5H3dkHRjp4s64KTKfiSYHag4cE2wWpsXxLnGM8NNYcX3p1NThYKpecq2PZGzDjJ6oXj');
     });
   });
 
